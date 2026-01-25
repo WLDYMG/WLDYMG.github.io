@@ -69,4 +69,21 @@
     <!-- Google AdSense -->
     <script data-ad-client="ca-pub-6487568398225121" async
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <style>
+@font-face {
+  font-family: 'MyCustomFont';
+  src: url('{{ site.baseurl }}/fonts/2026-01-25.ttf') format('truetype');
+  font-display: swap;
+}
+body.custom-font-enabled {
+  font-family: 'MyCustomFont', sans-serif !important;
+}
+[class^="glyphicon-"], [class*=" glyphicon-"] {
+  font-family: 'Glyphicons Halflings' !important;
+}
+.font-switcher {
+  cursor: pointer;
+  margin-left: 15px;
+}
+     </style>
 </head>
