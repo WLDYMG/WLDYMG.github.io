@@ -71,13 +71,17 @@
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
     <style>
 @font-face {
-  font-family: 'MyCustomFont';
-  src: url('{{ site.baseurl }}/fonts/2026-01-25.ttf') format('truetype');
+  font-family: 'Font2';
+  src: url('{{ site.baseurl }}/fonts/2026-01-25.0.ttf') format('truetype');
   font-display: swap;
 }
-body.custom-font-enabled {
-  font-family: 'MyCustomFont', sans-serif !important;
+@font-face {
+  font-family: 'Font3';
+  src: url('{{ site.baseurl }}/fonts/2026-01-25.1.ttf') format('truetype');
+  font-display: swap;
 }
+body.font-2 { font-family: 'Font2', sans-serif !important; }
+body.font-3 { font-family: 'Font3', sans-serif !important; }
 [class^="glyphicon-"], [class*=" glyphicon-"] {
   font-family: 'Glyphicons Halflings' !important;
 }
@@ -85,5 +89,5 @@ body.custom-font-enabled {
   cursor: pointer;
   margin-left: 15px;
 }
-     </style>
+    </style>
 </head>
