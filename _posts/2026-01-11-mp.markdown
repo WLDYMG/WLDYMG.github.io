@@ -3,7 +3,7 @@ layout:     post
 title:      "纪念合影!"
 date:       2026-01-11 09:41:00
 author:     "WLDYMG"
-header-img: "img/2025-03-18.0.jpg"
+header-img: "img/2025-03-18.0.png"
 tags:
     - 游戏记录
     - 纪念日
