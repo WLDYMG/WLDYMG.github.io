@@ -329,13 +329,21 @@
     });
 </script>
 <script>
-function toggleCustomFont() {
-  document.body.classList.toggle('custom-font-enabled');
-  localStorage.setItem('customFontEnabled', document.body.classList.contains('custom-font-enabled'));
+let currentFont = 0; // 0=默认,1=Font2,2=Font3
+function cycleFonts() {
+  const body = document.body;
+  body.classList.remove('font-2', 'font-3');
+  
+  currentFont = (currentFont + 1) % 3;
+  if (currentFont === 1) body.classList.add('font-2');
+  if (currentFont === 2) body.classList.add('font-3');
+  
+  localStorage.setItem('currentFont', currentFont);
 }
-document.addEventListener('DOMContentLoaded', function() {
-  if (localStorage.getItem('customFontEnabled') === 'true') {
-    document.body.classList.add('custom-font-enabled');
-  }
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentFont = parseInt(localStorage.getItem('currentFont') || 0);
+  if (currentFont === 1) document.body.classList.add('font-2');
+  if (currentFont === 2) document.body.classList.add('font-3');
 });
 </script>
