@@ -328,14 +328,3 @@
         });
     });
 </script>
-<script>
-function toggleCustomFont() {
-  document.body.classList.toggle('custom-font-enabled');
-  localStorage.setItem('customFontEnabled', document.body.classList.contains('custom-font-enabled'));
-}
-document.addEventListener('DOMContentLoaded', function() {
-  if (localStorage.getItem('customFontEnabled') === 'true') {
-    document.body.classList.add('custom-font-enabled');
-  }
-});
-</script>
