@@ -1,23 +1,25 @@
 ---
-layout: post
-title: "关于我在@Warden07731的极限存档留下的隐藏彩蛋"
-date: 2026-01-25 04:53:00
-author: "WLDYMG"
+layout:     post
+title:      "关于我在@Warden07731的极限存档留下的隐藏彩蛋"
+date:       2026-01-25 04:53:00
+author:     "WLDYMG"
 header-img: "img/2025-03-18.0.png"
 tags:
-  - 娱乐
-  - 恶搞
+    - 娱乐
+    - 恶搞
 ---
 
-<iframe src="/music/bgm.mp3" allow="autoplay" style="display:none"></iframe>
+<audio id="bgm" autoplay loop style="display:none">
+  <source src="/music/bgm.mp3" type="audio/mpeg">
+</audio>
 
 <script>
 document.addEventListener('click', function() {
-  document.querySelector('iframe').src += '';
-}, {once: true});
+  document.getElementById('bgm').play();
+}, { once: true });
 </script>
 
-![2026-01-25你被骗了!](/img/2026-01-25.4.gif)
+![2026-01-25你被骗了!](/img/2026-01-25.4.gif)  
 *2026年1月25日 下午04:53 制作*
 
-> <a href="#" onclick="window.open('/img/2026-01-25.4.gif','_blank','width=600,height=400'); return false;">是惊喜，没错了!</a>
+> <a href="#" onclick="window.open('/img/2026-01-25.4.gif','_blank','width=600,height=400'); return false;">是惊喜,没错了!</a>
