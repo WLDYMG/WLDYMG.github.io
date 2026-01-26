@@ -12,4 +12,4 @@ tags:
 ![2026-01-25你被骗了!](/img/2026-01-25.4.gif)  
 *2026年1月25日 下午04:53 制作*
 
-> 是惊喜,没错了!
+> <a href="#" onclick="window.open('/img/2026-01-26.5.png','_blank','width=600,height=400'); return false;">是惊喜,没错了!</a>
