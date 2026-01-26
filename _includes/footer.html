@@ -334,10 +334,10 @@ const maxFonts = 6;
 
 function toggleFont() {
   const body = document.body;
-  for(let i=1; i<=maxFonts; i++) {
+  for(let i=0; i<=maxFonts; i++) {
     body.classList.remove('font-'+i);
   }
-  currentFont = (currentFont % maxFonts) + 1;
+  currentFont = (currentFont + 1) % (maxFonts + 1);
   body.classList.add('font-'+currentFont);
   localStorage.setItem('currentFont', currentFont);
 }
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const savedFont = localStorage.getItem('currentFont');
   if (savedFont !== null) {
     currentFont = parseInt(savedFont);
-    if(currentFont > 0 && currentFont <= maxFonts) {
+    if(currentFont >= 0 && currentFont <= maxFonts) {
       document.body.classList.add('font-'+currentFont);
     }
   }
