@@ -1,0 +1,24 @@
+---
+layout:     post
+title:      "这篇文章有力气!"
+date:       2026-02-02 03:03:00
+author:     "WLDYMG"
+header-img: "img/2025-03-18.0.png"
+tags:
+    - 娱乐
+    - 整活
+---
+
+<audio id="bgm" autoplay loop style="display:none">
+  <source src="/music/2026-02-02.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+document.addEventListener('click', function() {
+  document.getElementById('bgm').play();
+}, { once: true });
+</script>
+
+*2026年2月2日 下午03:03 制作*
+
+> 这篇文章有力气!
