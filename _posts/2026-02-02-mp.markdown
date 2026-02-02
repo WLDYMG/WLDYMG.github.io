@@ -21,4 +21,4 @@ document.addEventListener('click', function() {
 
 *2026年2月2日 下午03:03 制作*
 
-> 这篇文章有力气!
+> <a href="/music/2026-02-02.mp3" download="Higher.mp3">这篇文章有力气!</a>
