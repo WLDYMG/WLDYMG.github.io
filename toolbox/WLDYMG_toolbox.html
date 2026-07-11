@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WLDYMG的工具箱</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #f2f6fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            padding: 20px;
+        }
+
+        .card {
+            max-width: 960px;
+            width: 100%;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            padding: 30px 34px 34px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #e2ebf3;
+            padding-bottom: 14px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #1a3344;
+        }
+
+        /* ---- 主选项卡 ---- */
+        .main-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2ebf3;
+            flex-wrap: wrap;
+        }
+
+        .main-tab {
+            padding: 8px 24px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #4a6f89;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            margin-bottom: -2px;
+        }
+
+        .main-tab:hover {
+            color: #1a3344;
+        }
+
+        .main-tab.active {
+            color: #1a5f7e;
+            border-bottom-color: #1a5f7e;
+        }
+
+        .main-panel {
+            display: none;
+        }
+
+        .main-panel.active {
+            display: block;
+        }
+
+        /* ---- 子选项卡（编码/解码） ---- */
+        .sub-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #e2ebf3;
+        }
+
+        .sub-tab {
+            padding: 6px 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #4a6f89;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            margin-bottom: -2px;
+        }
+
+        .sub-tab:hover {
+            color: #1a3344;
+        }
+
+        .sub-tab.active {
+            color: #1a5f7e;
+            border-bottom-color: #1a5f7e;
+        }
+
+        .sub-panel {
+            display: none;
+        }
+
+        .sub-panel.active {
+            display: block;
+        }
+
+        /* ---- 文件选择 ---- */
+        .file-row {
+            margin-bottom: 12px;
+        }
+
+        .file-row label {
+            font-weight: 500;
+            color: #1f4b66;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .file-row input[type="file"] {
+            padding: 6px 12px;
+            border: 1px solid #c8d8e6;
+            border-radius: 30px;
+            background: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .file-row input[type="file"]:hover {
+            border-color: #6f9bbd;
+        }
+
+        /* ---- 按钮 ---- */
+        .btn {
+            padding: 6px 20px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            white-space: nowrap;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+            transform: none !important;
+        }
+
+        .btn-primary {
+            background: #1a5f7e;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0f4a64;
+        }
+
+        .btn-success {
+            background: #2d6a4f;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #1e4f3a;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #c8d8e6;
+            color: #1f4b66;
+        }
+        .btn-outline:hover {
+            background: #e4eef7;
+        }
+
+        /* ---- 输入框 ---- */
+        .input-label {
+            font-weight: 500;
+            color: #1f4b66;
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.95rem;
+        }
+
+        .textarea-box {
+            margin: 12px 0 14px 0;
+        }
+
+        .textarea-box textarea {
+            width: 100%;
+            min-height: 130px;
+            padding: 14px 16px;
+            border: 1px solid #d0dfeb;
+            border-radius: 18px;
+            font-family: 'Segoe UI', 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: vertical;
+            background: #fafdff;
+            transition: border 0.2s;
+        }
+
+        .textarea-box textarea:focus {
+            outline: none;
+            border-color: #6f9bbd;
+            box-shadow: 0 0 0 3px rgba(79, 141, 176, 0.1);
+        }
+
+        /* ---- 操作栏 ---- */
+        .action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 16px;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+        }
+
+        .action-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        /* ---- 输出区域 ---- */
+        .result-section {
+            margin-top: 16px;
+        }
+
+        .result-section .result-label {
+            font-weight: 500;
+            color: #1f4b66;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .result-box {
+            background: #f8fbfe;
+            border-radius: 18px;
+            border: 1px solid #d0dfeb;
+            padding: 16px 20px;
+            min-height: 100px;
+            max-height: 280px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: 'Segoe UI', 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #0a1f2b;
+        }
+
+        .result-box.placeholder {
+            color: #8aaec4;
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ---- 结果操作按钮 ---- */
+        .result-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        /* ---- UUID 专用 ---- */
+        .uuid-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .uuid-controls label {
+            font-weight: 500;
+            color: #1f4b66;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+
+        .uuid-controls input[type="number"] {
+            width: 100px;
+            padding: 10px 14px;
+            border: 1px solid #d0dfeb;
+            border-radius: 18px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #0a1f2b;
+            background: #fafdff;
+            outline: none;
+            transition: border 0.2s;
+            flex-shrink: 0;
+        }
+
+        .uuid-controls input[type="number"]:focus {
+            border-color: #6f9bbd;
+            box-shadow: 0 0 0 3px rgba(79, 141, 176, 0.1);
+        }
+
+        .uuid-controls input[type="number"]::-webkit-inner-spin-button {
+            opacity: 0.5;
+        }
+
+        .uuid-output-wrapper {
+            background: #f8fbfe;
+            border-radius: 18px;
+            border: 1px solid #d0dfeb;
+            padding: 4px;
+            transition: border 0.2s;
+            min-height: 120px;
+        }
+
+        .uuid-output-wrapper:focus-within {
+            border-color: #6f9bbd;
+            box-shadow: 0 0 0 3px rgba(79, 141, 176, 0.1);
+        }
+
+        #uuid-output {
+            width: 100%;
+            min-height: 120px;
+            max-height: 280px;
+            padding: 16px 20px;
+            border: none;
+            border-radius: 14px;
+            background: transparent;
+            font-family: 'Segoe UI', 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: #0a1f2b;
+            resize: vertical;
+            outline: none;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        #uuid-output::-webkit-scrollbar {
+            width: 6px;
+        }
+        #uuid-output::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #uuid-output::-webkit-scrollbar-thumb {
+            background: #c8d8e6;
+            border-radius: 20px;
+        }
+        #uuid-output::-webkit-scrollbar-thumb:hover {
+            background: #a0b8cc;
+        }
+
+        /* ---- Toast ---- */
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1a3344;
+            color: white;
+            padding: 10px 28px;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+            opacity: 0;
+            transition: all 0.35s ease;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            background: #2d6a4f;
+        }
+
+        .toast.error {
+            background: #a43a3a;
+        }
+
+        /* ---- 响应式 ---- */
+        @media (max-width: 640px) {
+            .card {
+                padding: 20px 18px 24px;
+            }
+
+            .header h1 {
+                font-size: 1.4rem;
+            }
+
+            .main-tab {
+                padding: 6px 14px;
+                font-size: 0.85rem;
+            }
+
+            .sub-tab {
+                padding: 5px 14px;
+                font-size: 0.8rem;
+            }
+
+            .action-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .action-group {
+                justify-content: stretch;
+            }
+
+            .action-group .btn {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .result-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .result-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .file-row input[type="file"] {
+                max-width: 100%;
+            }
+
+            .uuid-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .uuid-controls label {
+                justify-content: flex-start;
+            }
+
+            .uuid-controls input[type="number"] {
+                width: 100px;
+                flex-shrink: 0;
+            }
+
+            .uuid-controls .action-group {
+                margin-left: 0;
+                justify-content: stretch;
+            }
+
+            .uuid-controls .action-group .btn {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <h1>WLDYMG的工具箱</h1>
+        </div>
+
+        <!-- 主选项卡 -->
+        <div class="main-tabs">
+            <button class="main-tab active" data-tool="unicode">Unicode 编解码</button>
+            <button class="main-tab" data-tool="base64">Base64 编解码</button>
+            <button class="main-tab" data-tool="uuid">UUID 生成</button>
+        </div>
+
+        <!-- ============================================================ -->
+        <!--  Unicode 编解码 -->
+        <!-- ============================================================ -->
+        <div class="main-panel active" id="panel-unicode">
+            <div class="sub-tabs">
+                <button class="sub-tab active" data-mode="encode" data-parent="unicode">编码</button>
+                <button class="sub-tab" data-mode="decode" data-parent="unicode">解码</button>
+            </div>
+
+            <!-- Unicode 编码 -->
+            <div class="sub-panel active" id="unicode-panel-encode">
+                <div class="file-row">
+                    <label for="unicode-encode-file">文件</label>
+                    <input type="file" id="unicode-encode-file" accept=".txt,.text,.html,.json,.csv,.xml,.md,.js,.css,.log">
+                </div>
+                <div class="textarea-box">
+                    <span class="input-label">输入框</span>
+                    <textarea id="unicode-encode-source"></textarea>
+                </div>
+                <div class="action-bar">
+                    <div class="action-group">
+                        <button class="btn btn-success" id="unicode-encode-btn">编码</button>
+                        <button class="btn btn-outline" id="unicode-encode-clear">清空</button>
+                    </div>
+                </div>
+                <div class="result-section">
+                    <span class="result-label">输出框</span>
+                    <div class="result-box placeholder" id="unicode-encode-output"></div>
+                    <div class="result-actions">
+                        <button class="btn btn-outline" id="unicode-encode-copy" disabled>复制</button>
+                        <button class="btn btn-outline" id="unicode-encode-download" disabled>下载</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unicode 解码 -->
+            <div class="sub-panel" id="unicode-panel-decode">
+                <div class="file-row">
+                    <label for="unicode-decode-file">文件</label>
+                    <input type="file" id="unicode-decode-file" accept=".txt,.text,.html,.json,.csv,.xml,.md,.js,.css,.log">
+                </div>
+                <div class="textarea-box">
+                    <span class="input-label">输入框</span>
+                    <textarea id="unicode-decode-source"></textarea>
+                </div>
+                <div class="action-bar">
+                    <div class="action-group">
+                        <button class="btn btn-primary" id="unicode-decode-btn">解码</button>
+                        <button class="btn btn-outline" id="unicode-decode-clear">清空</button>
+                    </div>
+                </div>
+                <div class="result-section">
+                    <span class="result-label">输出框</span>
+                    <div class="result-box placeholder" id="unicode-decode-output"></div>
+                    <div class="result-actions">
+                        <button class="btn btn-outline" id="unicode-decode-copy" disabled>复制</button>
+                        <button class="btn btn-outline" id="unicode-decode-download" disabled>下载</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!--  Base64 编解码 -->
+        <!-- ============================================================ -->
+        <div class="main-panel" id="panel-base64">
+            <div class="sub-tabs">
+                <button class="sub-tab active" data-mode="encode" data-parent="base64">编码</button>
+                <button class="sub-tab" data-mode="decode" data-parent="base64">解码</button>
+            </div>
+
+            <!-- Base64 编码 -->
+            <div class="sub-panel active" id="base64-panel-encode">
+                <div class="file-row">
+                    <label for="base64-encode-file">文件</label>
+                    <input type="file" id="base64-encode-file" accept=".txt,.text,.html,.json,.csv,.xml,.md,.js,.css,.log">
+                </div>
+                <div class="textarea-box">
+                    <span class="input-label">输入框</span>
+                    <textarea id="base64-encode-source"></textarea>
+                </div>
+                <div class="action-bar">
+                    <div class="action-group">
+                        <button class="btn btn-success" id="base64-encode-btn">编码</button>
+                        <button class="btn btn-outline" id="base64-encode-clear">清空</button>
+                    </div>
+                </div>
+                <div class="result-section">
+                    <span class="result-label">输出框</span>
+                    <div class="result-box placeholder" id="base64-encode-output"></div>
+                    <div class="result-actions">
+                        <button class="btn btn-outline" id="base64-encode-copy" disabled>复制</button>
+                        <button class="btn btn-outline" id="base64-encode-download" disabled>下载</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Base64 解码 -->
+            <div class="sub-panel" id="base64-panel-decode">
+                <div class="file-row">
+                    <label for="base64-decode-file">文件</label>
+                    <input type="file" id="base64-decode-file" accept=".txt,.text,.html,.json,.csv,.xml,.md,.js,.css,.log">
+                </div>
+                <div class="textarea-box">
+                    <span class="input-label">输入框</span>
+                    <textarea id="base64-decode-source"></textarea>
+                </div>
+                <div class="action-bar">
+                    <div class="action-group">
+                        <button class="btn btn-primary" id="base64-decode-btn">解码</button>
+                        <button class="btn btn-outline" id="base64-decode-clear">清空</button>
+                    </div>
+                </div>
+                <div class="result-section">
+                    <span class="result-label">输出框</span>
+                    <div class="result-box placeholder" id="base64-decode-output"></div>
+                    <div class="result-actions">
+                        <button class="btn btn-outline" id="base64-decode-copy" disabled>复制</button>
+                        <button class="btn btn-outline" id="base64-decode-download" disabled>下载</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!--  UUID 生成器 -->
+        <!-- ============================================================ -->
+        <div class="main-panel" id="panel-uuid">
+            <div class="uuid-controls">
+                <label>
+                    数量
+                    <input type="number" id="uuid-count" min="1" max="10000" value="1" />
+                </label>
+                <div class="action-group">
+                    <button class="btn btn-primary" id="uuid-generate">生成</button>
+                    <button class="btn btn-outline" id="uuid-clear">清空</button>
+                </div>
+            </div>
+
+            <div class="result-section">
+                <span class="result-label">输出框</span>
+                <div class="uuid-output-wrapper">
+                    <pre id="uuid-output" contenteditable="false" spellcheck="false"></pre>
+                </div>
+                <div class="result-actions">
+                    <button class="btn btn-outline" id="uuid-copy" disabled>复制</button>
+                    <button class="btn btn-outline" id="uuid-download" disabled>下载</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ================================================================
+            //  Toast
+            // ================================================================
+            const toastEl = document.getElementById('toast');
+            let toastTimer = null;
+
+            function showToast(msg, type) {
+                toastEl.textContent = msg;
+                toastEl.className = 'toast show';
+                if (type === 'success') toastEl.classList.add('success');
+                if (type === 'error') toastEl.classList.add('error');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                    toastEl.classList.remove('show');
+                }, 2000);
+            }
+
+            // ================================================================
+            //  主选项卡切换
+            // ================================================================
+            const mainTabs = document.querySelectorAll('.main-tab');
+            const mainPanels = {
+                unicode: document.getElementById('panel-unicode'),
+                base64: document.getElementById('panel-base64'),
+                uuid: document.getElementById('panel-uuid')
+            };
+
+            mainTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    mainTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    const tool = this.dataset.tool;
+                    Object.keys(mainPanels).forEach(key => {
+                        mainPanels[key].classList.toggle('active', key === tool);
+                    });
+                });
+            });
+
+            // ================================================================
+            //  子选项卡切换（Unicode / Base64 的编码/解码）
+            // ================================================================
+            document.querySelectorAll('.sub-tabs').forEach(tabsContainer => {
+                const parent = tabsContainer.dataset.parent || tabsContainer.closest('.main-panel')
+                ?.id?.replace('panel-', '') || 'unicode';
+                const tabs = tabsContainer.querySelectorAll('.sub-tab');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', function() {
+                        tabs.forEach(t => t.classList.remove('active'));
+                        this.classList.add('active');
+                        const mode = this.dataset.mode;
+                        const parentId = this.dataset.parent || parent;
+                        const panelEncode = document.getElementById(parentId +
+                            '-panel-encode');
+                        const panelDecode = document.getElementById(parentId +
+                            '-panel-decode');
+                        if (panelEncode && panelDecode) {
+                            panelEncode.classList.toggle('active', mode === 'encode');
+                            panelDecode.classList.toggle('active', mode === 'decode');
+                        }
+                    });
+                });
+            });
+
+            // ================================================================
+            //  工具函数
+            // ================================================================
+            function getRandomFileName() {
+                const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+                let result = '';
+                for (let i = 0; i < 32; i++) {
+                    result += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return result + '.txt';
+            }
+
+            function setupCopy(btn, getContent, placeholderCheck) {
+                btn.addEventListener('click', function() {
+                    const content = getContent();
+                    if (!content || placeholderCheck()) {
+                        showToast('没有可复制的内容', 'error');
+                        return;
+                    }
+                    navigator.clipboard.writeText(content).then(() => {
+                        showToast('已复制到剪贴板', 'success');
+                    }).catch(() => {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = content;
+                        textarea.style.position = 'fixed';
+                        textarea.style.left = '-9999px';
+                        textarea.style.top = '-9999px';
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        try {
+                            document.execCommand('copy');
+                            showToast('已复制到剪贴板', 'success');
+                        } catch (_) {
+                            showToast('复制失败，请手动复制', 'error');
+                        }
+                        document.body.removeChild(textarea);
+                    });
+                });
+            }
+
+            function setupDownload(btn, getContent, placeholderCheck) {
+                btn.addEventListener('click', function() {
+                    const content = getContent();
+                    if (!content || placeholderCheck()) {
+                        showToast('没有可下载的内容', 'error');
+                        return;
+                    }
+                    try {
+                        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = getRandomFileName();
+                        document.body.appendChild(a);
+                        a.click();
+                        setTimeout(() => {
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        }, 300);
+                        showToast('下载成功', 'success');
+                    } catch (err) {
+                        showToast('下载失败: ' + err.message, 'error');
+                    }
+                });
+            }
+
+            // ================================================================
+            //  Unicode 编解码
+            // ================================================================
+            (function() {
+                // ---- DOM ----
+                const encodeFile = document.getElementById('unicode-encode-file');
+                const encodeSource = document.getElementById('unicode-encode-source');
+                const encodeBtn = document.getElementById('unicode-encode-btn');
+                const encodeClear = document.getElementById('unicode-encode-clear');
+                const encodeOutput = document.getElementById('unicode-encode-output');
+                const encodeCopy = document.getElementById('unicode-encode-copy');
+                const encodeDownload = document.getElementById('unicode-encode-download');
+
+                const decodeFile = document.getElementById('unicode-decode-file');
+                const decodeSource = document.getElementById('unicode-decode-source');
+                const decodeBtn = document.getElementById('unicode-decode-btn');
+                const decodeClear = document.getElementById('unicode-decode-clear');
+                const decodeOutput = document.getElementById('unicode-decode-output');
+                const decodeCopy = document.getElementById('unicode-decode-copy');
+                const decodeDownload = document.getElementById('unicode-decode-download');
+
+                let unicodeEncodedText = '';
+                let unicodeDecodedText = '';
+
+                // ---- 编码 ----
+                function unicodeEncodeAll(str) {
+                    if (typeof str !== 'string') return '';
+                    const result = [];
+                    for (const ch of str) {
+                        const code = ch.codePointAt(0);
+                        if (code > 0xFFFF) {
+                            const hex = code.toString(16).toUpperCase().padStart(8, '0');
+                            result.push('\\U' + hex);
+                        } else {
+                            const hex = code.toString(16).toUpperCase().padStart(4, '0');
+                            result.push('\\u' + hex);
+                        }
+                    }
+                    return result.join('');
+                }
+
+                function performUnicodeEncode() {
+                    const raw = encodeSource.value;
+                    if (!raw || raw.trim() === '') {
+                        showToast('请输入要编码的文本', 'error');
+                        return;
+                    }
+                    const encoded = unicodeEncodeAll(raw);
+                    unicodeEncodedText = encoded;
+                    encodeOutput.className = 'result-box';
+                    encodeOutput.textContent = encoded;
+                    encodeCopy.disabled = false;
+                    encodeDownload.disabled = false;
+                    showToast('编码成功', 'success');
+                }
+
+                function loadUnicodeEncodeFile(file) {
+                    if (!file) { showToast('请选择文件', 'error'); return; }
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            encodeSource.value = e.target.result;
+                            performUnicodeEncode();
+                        } catch (err) {
+                            showToast('读取失败: ' + err.message, 'error');
+                        }
+                    };
+                    reader.onerror = function() { showToast('文件读取错误', 'error'); };
+                    reader.readAsText(file, 'UTF-8');
+                }
+
+                function resetUnicodeEncode() {
+                    encodeSource.value = '';
+                    encodeOutput.className = 'result-box placeholder';
+                    encodeOutput.textContent = '';
+                    unicodeEncodedText = '';
+                    encodeFile.value = '';
+                    encodeCopy.disabled = true;
+                    encodeDownload.disabled = true;
+                }
+
+                encodeFile.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        loadUnicodeEncodeFile(this.files[0]);
+                    }
+                });
+                encodeBtn.addEventListener('click', performUnicodeEncode);
+                encodeClear.addEventListener('click', function() {
+                    resetUnicodeEncode();
+                    showToast('已清空', 'success');
+                });
+
+                setupCopy(encodeCopy,
+                    () => unicodeEncodedText || encodeOutput.textContent,
+                    () => encodeOutput.classList.contains('placeholder')
+                );
+                setupDownload(encodeDownload,
+                    () => unicodeEncodedText || encodeOutput.textContent,
+                    () => encodeOutput.classList.contains('placeholder')
+                );
+
+                // ---- 解码 ----
+                function unicodeDecode(str) {
+                    if (typeof str !== 'string') return '';
+                    return str.replace(/\\[uU]([0-9a-fA-F]{4,8})/g, (match, hex) => {
+                        try {
+                            const codePoint = parseInt(hex, 16);
+                            if (isNaN(codePoint) || codePoint < 0) return match;
+                            return String.fromCodePoint(codePoint);
+                        } catch (_) {
+                            return match;
+                        }
+                    });
+                }
+
+                function performUnicodeDecode() {
+                    const raw = decodeSource.value;
+                    if (!raw || raw.trim() === '') {
+                        showToast('请输入要解码的 Unicode 文本', 'error');
+                        return;
+                    }
+                    const decoded = unicodeDecode(raw);
+                    unicodeDecodedText = decoded;
+                    decodeOutput.className = 'result-box';
+                    decodeOutput.textContent = decoded;
+                    decodeCopy.disabled = false;
+                    decodeDownload.disabled = false;
+                    showToast('解码成功', 'success');
+                }
+
+                function loadUnicodeDecodeFile(file) {
+                    if (!file) { showToast('请选择文件', 'error'); return; }
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            decodeSource.value = e.target.result;
+                            performUnicodeDecode();
+                        } catch (err) {
+                            showToast('读取失败: ' + err.message, 'error');
+                        }
+                    };
+                    reader.onerror = function() { showToast('文件读取错误', 'error'); };
+                    reader.readAsText(file, 'UTF-8');
+                }
+
+                function resetUnicodeDecode() {
+                    decodeSource.value = '';
+                    decodeOutput.className = 'result-box placeholder';
+                    decodeOutput.textContent = '';
+                    unicodeDecodedText = '';
+                    decodeFile.value = '';
+                    decodeCopy.disabled = true;
+                    decodeDownload.disabled = true;
+                }
+
+                decodeFile.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        loadUnicodeDecodeFile(this.files[0]);
+                    }
+                });
+                decodeBtn.addEventListener('click', performUnicodeDecode);
+                decodeClear.addEventListener('click', function() {
+                    resetUnicodeDecode();
+                    showToast('已清空', 'success');
+                });
+
+                setupCopy(decodeCopy,
+                    () => unicodeDecodedText || decodeOutput.textContent,
+                    () => decodeOutput.classList.contains('placeholder')
+                );
+                setupDownload(decodeDownload,
+                    () => unicodeDecodedText || decodeOutput.textContent,
+                    () => decodeOutput.classList.contains('placeholder')
+                );
+
+                // 初始化
+                resetUnicodeEncode();
+                resetUnicodeDecode();
+            })();
+
+            // ================================================================
+            //  Base64 编解码
+            // ================================================================
+            (function() {
+                // ---- DOM ----
+                const encodeFile = document.getElementById('base64-encode-file');
+                const encodeSource = document.getElementById('base64-encode-source');
+                const encodeBtn = document.getElementById('base64-encode-btn');
+                const encodeClear = document.getElementById('base64-encode-clear');
+                const encodeOutput = document.getElementById('base64-encode-output');
+                const encodeCopy = document.getElementById('base64-encode-copy');
+                const encodeDownload = document.getElementById('base64-encode-download');
+
+                const decodeFile = document.getElementById('base64-decode-file');
+                const decodeSource = document.getElementById('base64-decode-source');
+                const decodeBtn = document.getElementById('base64-decode-btn');
+                const decodeClear = document.getElementById('base64-decode-clear');
+                const decodeOutput = document.getElementById('base64-decode-output');
+                const decodeCopy = document.getElementById('base64-decode-copy');
+                const decodeDownload = document.getElementById('base64-decode-download');
+
+                let base64EncodedText = '';
+                let base64DecodedText = '';
+
+                // ---- 编码 ----
+                function base64Encode(str) {
+                    try {
+                        return btoa(unescape(encodeURIComponent(str)));
+                    } catch (_) {
+                        return btoa(str);
+                    }
+                }
+
+                function performBase64Encode() {
+                    const raw = encodeSource.value;
+                    if (!raw || raw.trim() === '') {
+                        showToast('请输入要编码的文本', 'error');
+                        return;
+                    }
+                    try {
+                        const encoded = base64Encode(raw);
+                        base64EncodedText = encoded;
+                        encodeOutput.className = 'result-box';
+                        encodeOutput.textContent = encoded;
+                        encodeCopy.disabled = false;
+                        encodeDownload.disabled = false;
+                        showToast('编码成功', 'success');
+                    } catch (_) {
+                        showToast('编码失败，请检查输入内容', 'error');
+                    }
+                }
+
+                function loadBase64EncodeFile(file) {
+                    if (!file) { showToast('请选择文件', 'error'); return; }
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            encodeSource.value = e.target.result;
+                            performBase64Encode();
+                        } catch (err) {
+                            showToast('读取失败: ' + err.message, 'error');
+                        }
+                    };
+                    reader.onerror = function() { showToast('文件读取错误', 'error'); };
+                    reader.readAsText(file, 'UTF-8');
+                }
+
+                function resetBase64Encode() {
+                    encodeSource.value = '';
+                    encodeOutput.className = 'result-box placeholder';
+                    encodeOutput.textContent = '';
+                    base64EncodedText = '';
+                    encodeFile.value = '';
+                    encodeCopy.disabled = true;
+                    encodeDownload.disabled = true;
+                }
+
+                encodeFile.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        loadBase64EncodeFile(this.files[0]);
+                    }
+                });
+                encodeBtn.addEventListener('click', performBase64Encode);
+                encodeClear.addEventListener('click', function() {
+                    resetBase64Encode();
+                    showToast('已清空', 'success');
+                });
+
+                setupCopy(encodeCopy,
+                    () => base64EncodedText || encodeOutput.textContent,
+                    () => encodeOutput.classList.contains('placeholder')
+                );
+                setupDownload(encodeDownload,
+                    () => base64EncodedText || encodeOutput.textContent,
+                    () => encodeOutput.classList.contains('placeholder')
+                );
+
+                // ---- 解码 ----
+                function base64Decode(str) {
+                    try {
+                        return decodeURIComponent(escape(atob(str)));
+                    } catch (_) {
+                        return atob(str);
+                    }
+                }
+
+                function performBase64Decode() {
+                    const raw = decodeSource.value;
+                    if (!raw || raw.trim() === '') {
+                        showToast('请输入要解码的 Base64 文本', 'error');
+                        return;
+                    }
+                    try {
+                        const decoded = base64Decode(raw.trim());
+                        base64DecodedText = decoded;
+                        decodeOutput.className = 'result-box';
+                        decodeOutput.textContent = decoded;
+                        decodeCopy.disabled = false;
+                        decodeDownload.disabled = false;
+                        showToast('解码成功', 'success');
+                    } catch (_) {
+                        showToast('Base64 解码失败，请检查输入是否为有效的 Base64 格式', 'error');
+                    }
+                }
+
+                function loadBase64DecodeFile(file) {
+                    if (!file) { showToast('请选择文件', 'error'); return; }
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            decodeSource.value = e.target.result;
+                            performBase64Decode();
+                        } catch (err) {
+                            showToast('读取失败: ' + err.message, 'error');
+                        }
+                    };
+                    reader.onerror = function() { showToast('文件读取错误', 'error'); };
+                    reader.readAsText(file, 'UTF-8');
+                }
+
+                function resetBase64Decode() {
+                    decodeSource.value = '';
+                    decodeOutput.className = 'result-box placeholder';
+                    decodeOutput.textContent = '';
+                    base64DecodedText = '';
+                    decodeFile.value = '';
+                    decodeCopy.disabled = true;
+                    decodeDownload.disabled = true;
+                }
+
+                decodeFile.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        loadBase64DecodeFile(this.files[0]);
+                    }
+                });
+                decodeBtn.addEventListener('click', performBase64Decode);
+                decodeClear.addEventListener('click', function() {
+                    resetBase64Decode();
+                    showToast('已清空', 'success');
+                });
+
+                setupCopy(decodeCopy,
+                    () => base64DecodedText || decodeOutput.textContent,
+                    () => decodeOutput.classList.contains('placeholder')
+                );
+                setupDownload(decodeDownload,
+                    () => base64DecodedText || decodeOutput.textContent,
+                    () => decodeOutput.classList.contains('placeholder')
+                );
+
+                // 初始化
+                resetBase64Encode();
+                resetBase64Decode();
+            })();
+
+            // ================================================================
+            //  UUID 生成器
+            // ================================================================
+            (function() {
+                const output = document.getElementById('uuid-output');
+                const countInput = document.getElementById('uuid-count');
+                const generateBtn = document.getElementById('uuid-generate');
+                const clearBtn = document.getElementById('uuid-clear');
+                const copyBtn = document.getElementById('uuid-copy');
+                const downloadBtn = document.getElementById('uuid-download');
+
+                let currentUUIDs = [];
+
+                function generateUUID() {
+                    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+                        return crypto.randomUUID();
+                    }
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                        const r = (Math.random() * 16) | 0;
+                        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+                        return v.toString(16);
+                    });
+                }
+
+                function generateMany(count) {
+                    const arr = [];
+                    for (let i = 0; i < count; i++) {
+                        arr.push(generateUUID());
+                    }
+                    return arr;
+                }
+
+                function renderUUIDs(list) {
+                    if (!list || list.length === 0) {
+                        output.textContent = '';
+                        downloadBtn.disabled = true;
+                        copyBtn.disabled = true;
+                        currentUUIDs = [];
+                        return;
+                    }
+                    const text = list.join('\n');
+                    output.textContent = text;
+                    downloadBtn.disabled = false;
+                    copyBtn.disabled = false;
+                    currentUUIDs = list.slice();
+                }
+
+                function handleGenerate() {
+                    let raw = countInput.value.trim();
+                    let count = parseInt(raw, 10);
+                    if (isNaN(count) || count < 1) {
+                        count = 1;
+                        countInput.value = 1;
+                    }
+                    if (count > 10000) {
+                        count = 10000;
+                        countInput.value = 10000;
+                        showToast('最大支持 10000 个', 'error');
+                    }
+                    const uuids = generateMany(count);
+                    renderUUIDs(uuids);
+                    output.scrollTop = 0;
+                    showToast('生成成功', 'success');
+                }
+
+                function handleClear() {
+                    renderUUIDs([]);
+                    countInput.value = 1; // 恢复数量为默认值
+                    showToast('已清空', 'success');
+                }
+
+                function sanitizeCountInput() {
+                    let val = parseInt(countInput.value, 10);
+                    if (isNaN(val) || val < 1) {
+                        countInput.value = 1;
+                    } else if (val > 10000) {
+                        countInput.value = 10000;
+                    }
+                }
+
+                generateBtn.addEventListener('click', handleGenerate);
+                clearBtn.addEventListener('click', handleClear);
+
+                countInput.addEventListener('change', sanitizeCountInput);
+                countInput.addEventListener('blur', sanitizeCountInput);
+                countInput.addEventListener('focus', function() { this.select(); });
+
+                setupCopy(copyBtn,
+                    () => currentUUIDs.join('\n'),
+                    () => currentUUIDs.length === 0
+                );
+
+                setupDownload(downloadBtn,
+                    () => currentUUIDs.join('\n'),
+                    () => currentUUIDs.length === 0
+                );
+
+                // 快捷键 Ctrl+Enter 生成
+                document.addEventListener('keydown', function(e) {
+                    const panel = document.getElementById('panel-uuid');
+                    if (!panel.classList.contains('active')) return;
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                        e.preventDefault();
+                        handleGenerate();
+                    }
+                    if (e.key === 'Escape' && e.target === countInput) {
+                        handleClear();
+                    }
+                });
+
+                // 初始化
+                renderUUIDs([]);
+                countInput.value = 1;
+            })();
+
+        })();
+    </script>
+</body>
+</html>
