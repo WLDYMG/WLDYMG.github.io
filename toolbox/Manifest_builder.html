@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manifest 生成器</title>
+    <style>
+        /* ========== Reset & Base ========== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #f2f6fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 30px 20px;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+
+        .card {
+            max-width: 1100px;
+            width: 100%;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            padding: 30px 34px 34px;
+        }
+
+        /* ========== Header ========== */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #e2ebf3;
+            padding-bottom: 14px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #1a3344;
+        }
+
+        .header .subtitle {
+            font-size: 0.9rem;
+            color: #6f8fa3;
+            background: #eef4f9;
+            padding: 4px 16px;
+            border-radius: 30px;
+            font-weight: 500;
+        }
+
+        /* ========== Grid ========== */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+        }
+
+        @media (max-width: 820px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+        }
+
+        /* ========== Form Panel ========== */
+        .form-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .section {
+            background: #f8fbfe;
+            border-radius: 18px;
+            border: 1px solid #e2ebf3;
+            padding: 18px 20px 22px;
+            transition: border 0.2s;
+        }
+
+        .section:hover {
+            border-color: #c8d8e6;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a3344;
+            margin-bottom: 14px;
+            letter-spacing: 0.2px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 14px;
+        }
+        .field-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .field-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1f4b66;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .field-label .hint {
+            font-weight: 400;
+            color: #8aa9bd;
+            font-size: 0.75rem;
+        }
+
+        .field-label .required {
+            color: #c0392b;
+            font-weight: 700;
+        }
+
+        .field-input,
+        .field-textarea {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 0.95rem;
+            border: 1px solid #d0dfeb;
+            border-radius: 18px;
+            background: #fafdff;
+            color: #0a1f2b;
+            font-family: inherit;
+            outline: none;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+
+        .field-input:focus,
+        .field-textarea:focus {
+            border-color: #6f9bbd;
+            box-shadow: 0 0 0 3px rgba(79, 141, 176, 0.10);
+        }
+
+        .field-textarea {
+            min-height: 60px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        /* UUID row */
+        .uuid-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .uuid-row .uuid-input {
+            flex: 1;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            font-family: 'Segoe UI', 'Roboto Mono', monospace;
+            border: 1px solid #d0dfeb;
+            border-radius: 18px;
+            background: #fafdff;
+            color: #0a1f2b;
+            outline: none;
+            transition: border 0.2s, box-shadow 0.2s;
+            min-width: 0;
+        }
+
+        .uuid-row .uuid-input:focus {
+            border-color: #6f9bbd;
+            box-shadow: 0 0 0 3px rgba(79, 141, 176, 0.10);
+        }
+
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: 1px solid #d0dfeb;
+            border-radius: 30px;
+            background: #fafdff;
+            color: #1f4b66;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+            flex-shrink: 0;
+        }
+
+        .btn-icon:hover {
+            background: #e4eef7;
+            border-color: #b0c8da;
+        }
+
+        .btn-icon:active {
+            transform: scale(0.94);
+        }
+
+        /* ========== 版本号输入框 ========== */
+        .version-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .version-group .ver-input {
+            width: 54px;
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 600;
+            border: 1.5px solid #dce1ea;
+            border-radius: 10px;
+            background: #ffffff;
+            transition: border 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+            color: #1e2a3a;
+            -moz-appearance: textfield;
+        }
+
+        .version-group .ver-input::-webkit-outer-spin-button,
+        .version-group .ver-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .version-group .ver-input:focus {
+            outline: none;
+            border-color: #6f9bbd;
+            box-shadow: 0 0 0 3px rgba(79, 141, 176, 0.10);
+        }
+
+        .version-group .ver-sep {
+            font-size: 18px;
+            font-weight: 700;
+            color: #8a9aa8;
+            padding: 0 2px;
+            user-select: none;
+        }
+
+        .version-group .ver-label {
+            font-size: 13px;
+            color: #5a6a7a;
+            margin-right: 4px;
+            font-weight: 500;
+        }
+
+        /* ========== Buttons ========== */
+        .btn {
+            padding: 8px 22px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s, opacity 0.2s;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: #1a5f7e;
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #0f4a64;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #c8d8e6;
+            color: #1f4b66;
+        }
+        .btn-outline:hover:not(:disabled) {
+            background: #e4eef7;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+            transform: none !important;
+        }
+        .btn:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+
+        .reset-wrapper {
+            margin-top: 2px;
+        }
+
+        /* ========== Preview Panel ========== */
+        .preview-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .preview-header .preview-title {
+            font-weight: 600;
+            color: #1a3344;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .preview-header .preview-title small {
+            font-weight: 400;
+            color: #6f8fa3;
+            font-size: 0.85rem;
+        }
+
+        .output-wrapper {
+            background: #f8fbfe;
+            border-radius: 18px;
+            border: 1px solid #d0dfeb;
+            padding: 4px;
+            transition: border 0.2s;
+            min-height: 280px;
+            max-height: 540px;
+            overflow: auto;
+        }
+
+        .output-wrapper:focus-within {
+            border-color: #6f9bbd;
+            box-shadow: 0 0 0 3px rgba(79, 141, 176, 0.10);
+        }
+
+        #jsonPreview {
+            width: 100%;
+            min-height: 280px;
+            max-height: 540px;
+            padding: 16px 20px;
+            border: none;
+            border-radius: 14px;
+            background: transparent;
+            font-family: 'Segoe UI', 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.7;
+            color: #0a1f2b;
+            resize: vertical;
+            outline: none;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin: 0;
+        }
+
+        #jsonPreview::-webkit-scrollbar {
+            width: 6px;
+        }
+        #jsonPreview::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #jsonPreview::-webkit-scrollbar-thumb {
+            background: #c8d8e6;
+            border-radius: 20px;
+        }
+        #jsonPreview::-webkit-scrollbar-thumb:hover {
+            background: #a0b8cc;
+        }
+
+        /* ===== 预览操作按钮 ===== */
+        .preview-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        /* JSON syntax highlight */
+        .hl-key {
+            color: #b45309;
+        }
+        .hl-string {
+            color: #0d7a3e;
+        }
+        .hl-number {
+            color: #0369a1;
+        }
+        .hl-bool {
+            color: #b45309;
+        }
+        .hl-null {
+            color: #b91c1c;
+        }
+        .hl-bracket {
+            color: #374151;
+        }
+        .hl-punctuation {
+            color: #6b7280;
+        }
+
+        /* ========== Toast ========== */
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1a3344;
+            color: white;
+            padding: 10px 28px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+            opacity: 0;
+            transition: all 0.35s ease;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success {
+            background: #2d6a4f;
+        }
+        .toast.error {
+            background: #a43a3a;
+        }
+
+        /* ========== Modal ========== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.30);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: white;
+            padding: 30px 36px 26px;
+            border-radius: 28px;
+            max-width: 380px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.20);
+            text-align: center;
+            animation: modalFadeIn 0.2s ease-out;
+        }
+
+        .modal-box .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1a3344;
+            margin-bottom: 6px;
+        }
+
+        .modal-box .modal-message {
+            font-size: 0.95rem;
+            color: #3d5e73;
+            margin-bottom: 22px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .modal-actions .btn {
+            min-width: 80px;
+        }
+
+        .modal-actions .btn-outline {
+            border-color: #d0dfeb;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.94);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* ========== Responsive ========== */
+        @media (max-width: 640px) {
+            .card {
+                padding: 18px 16px 22px;
+                border-radius: 20px;
+            }
+            .header h1 {
+                font-size: 1.4rem;
+            }
+            .header .subtitle {
+                font-size: 0.75rem;
+                padding: 2px 12px;
+            }
+            .main-grid {
+                gap: 18px;
+            }
+            .section {
+                padding: 14px 14px 18px;
+            }
+            .uuid-row {
+                flex-wrap: wrap;
+            }
+            .uuid-row .uuid-input {
+                width: 100%;
+                font-size: 0.8rem;
+            }
+            .version-group .ver-input {
+                width: 44px;
+                padding: 6px 2px;
+                font-size: 14px;
+            }
+            .preview-actions {
+                width: 100%;
+            }
+            .preview-actions .btn {
+                flex: 1;
+                justify-content: center;
+            }
+            .modal-box {
+                padding: 24px 20px 20px;
+            }
+            .modal-actions {
+                flex-direction: row;
+            }
+            .modal-actions .btn {
+                flex: 1;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .version-group .ver-input {
+                width: 38px;
+                padding: 4px 1px;
+                font-size: 13px;
+            }
+            .version-group .ver-sep {
+                font-size: 0.9rem;
+            }
+            .btn {
+                padding: 6px 14px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <!-- Header -->
+        <header class="header">
+            <h1>Manifest 生成器</h1>
+            <span class="subtitle">Minecraft 资源包 · Bedrock</span>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+
+            <!-- ===== LEFT: FORM ===== -->
+            <div class="form-panel">
+
+                <!-- 基本信息 -->
+                <div class="section">
+                    <div class="section-title">基本信息</div>
+                    <div class="field-group">
+                        <label class="field-label">
+                            Name <span class="required">*</span>
+                            <span class="hint">资源包名称</span>
+                        </label>
+                        <input class="field-input" id="inputName" type="text" value="" />
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">
+                            Description <span class="required">*</span>
+                            <span class="hint">资源包描述</span>
+                        </label>
+                        <textarea class="field-textarea" id="inputDesc"></textarea>
+                    </div>
+                </div>
+
+                <!-- UUID -->
+                <div class="section">
+                    <div class="section-title">UUID</div>
+                    <div class="field-group">
+                        <label class="field-label">Header UUID</label>
+                        <div class="uuid-row">
+                            <input class="uuid-input" id="uuidHeader" type="text" value="" />
+                        </div>
+                    </div>
+                    <div class="field-group" style="margin-bottom:0;">
+                        <label class="field-label">Modules UUID</label>
+                        <div class="uuid-row">
+                            <input class="uuid-input" id="uuidModules" type="text" value="" />
+                        </div>
+                    </div>
+                    <div style="margin-top: 14px;">
+                        <button class="btn btn-outline" id="refreshUuidBtn">刷新 UUID</button>
+                    </div>
+                </div>
+
+                <!-- 版本号 -->
+                <div class="section">
+                    <div class="section-title">版本号</div>
+
+                    <div class="field-group">
+                        <label class="field-label">Header Version</label>
+                        <div class="version-group">
+                            <span class="ver-label">[</span>
+                            <input class="ver-input" id="hv0" type="number" value="0" min="0" max="999" />
+                            <span class="ver-sep">,</span>
+                            <input class="ver-input" id="hv1" type="number" value="0" min="0" max="999" />
+                            <span class="ver-sep">,</span>
+                            <input class="ver-input" id="hv2" type="number" value="1" min="0" max="999" />
+                            <span class="ver-label">]</span>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Modules Version</label>
+                        <div class="version-group">
+                            <span class="ver-label">[</span>
+                            <input class="ver-input" id="mv0" type="number" value="0" min="0" max="999" />
+                            <span class="ver-sep">,</span>
+                            <input class="ver-input" id="mv1" type="number" value="0" min="0" max="999" />
+                            <span class="ver-sep">,</span>
+                            <input class="ver-input" id="mv2" type="number" value="1" min="0" max="999" />
+                            <span class="ver-label">]</span>
+                        </div>
+                    </div>
+
+                    <div class="field-group" style="margin-bottom:0;">
+                        <label class="field-label">Min Engine Version</label>
+                        <div class="version-group">
+                            <span class="ver-label">[</span>
+                            <input class="ver-input" id="mev0" type="number" value="1" min="0" max="999" />
+                            <span class="ver-sep">,</span>
+                            <input class="ver-input" id="mev1" type="number" value="13" min="0" max="999" />
+                            <span class="ver-sep">,</span>
+                            <input class="ver-input" id="mev2" type="number" value="0" min="0" max="999" />
+                            <span class="ver-label">]</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 重置按钮 - 使用 btn-primary 与下载按钮风格一致 -->
+                <div class="reset-wrapper">
+                    <button class="btn btn-primary" id="resetBtn">重置</button>
+                </div>
+            </div>
+
+            <!-- ===== RIGHT: PREVIEW ===== -->
+            <div class="preview-panel">
+                <div class="preview-header">
+                    <span class="preview-title">
+                        预览 <small>manifest.json</small>
+                    </span>
+                </div>
+
+                <div class="output-wrapper">
+                    <pre id="jsonPreview" spellcheck="false">{
+                        <span class="hl-punctuation">  </span><span class="hl-key">"format_version"</span>: <span class="hl-number">2</span>,
+                        <span class="hl-punctuation">  </span><span class="hl-key">"header"</span>: {
+                        <span class="hl-punctuation">    </span><span class="hl-key">"description"</span>: <span class="hl-string">""</span>,
+                        <span class="hl-punctuation">    </span><span class="hl-key">"name"</span>: <span class="hl-string">""</span>,
+                        <span class="hl-punctuation">    </span><span class="hl-key">"uuid"</span>: <span class="hl-string">""</span>,
+                        <span class="hl-punctuation">    </span><span class="hl-key">"version"</span>: [<span class="hl-number">0</span>, <span class="hl-number">0</span>, <span class="hl-number">1</span>],
+                        <span class="hl-punctuation">    </span><span class="hl-key">"min_engine_version"</span>: [<span class="hl-number">1</span>, <span class="hl-number">13</span>, <span class="hl-number">0</span>]
+                        <span class="hl-punctuation">  </span>},
+                        <span class="hl-punctuation">  </span><span class="hl-key">"modules"</span>: [
+                        <span class="hl-punctuation">    </span>{
+                        <span class="hl-punctuation">      </span><span class="hl-key">"description"</span>: <span class="hl-string">""</span>,
+                        <span class="hl-punctuation">      </span><span class="hl-key">"type"</span>: <span class="hl-string">"resources"</span>,
+                        <span class="hl-punctuation">      </span><span class="hl-key">"uuid"</span>: <span class="hl-string">""</span>,
+                        <span class="hl-punctuation">      </span><span class="hl-key">"version"</span>: [<span class="hl-number">0</span>, <span class="hl-number">0</span>, <span class="hl-number">1</span>]
+                        <span class="hl-punctuation">    </span>}
+                        <span class="hl-punctuation">  </span>]
+                        <span class="hl-punctuation">}</span>
+                    </pre>
+                </div>
+
+                <!-- 复制和下载按钮放在预览框下方，右对齐 -->
+                <div class="preview-actions">
+                    <button class="btn btn-outline" id="copyBtn" disabled>复制</button>
+                    <button class="btn btn-primary" id="downloadBtn" disabled>下载</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="resetModal">
+        <div class="modal-box">
+            <div class="modal-title">确认重置</div>
+            <div class="modal-message">是否重置所有版本与名称？</div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="modalCancel">取消</button>
+                <button class="btn btn-primary" id="modalConfirm">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ===== DOM refs =====
+            const $ = id => document.getElementById(id);
+            const inputName = $('inputName');
+            const inputDesc = $('inputDesc');
+            const uuidHeaderEl = $('uuidHeader');
+            const uuidModulesEl = $('uuidModules');
+            const refreshUuidBtn = $('refreshUuidBtn');
+
+            const hv = [$('hv0'), $('hv1'), $('hv2')];
+            const mv = [$('mv0'), $('mv1'), $('mv2')];
+            const mev = [$('mev0'), $('mev1'), $('mev2')];
+
+            const previewEl = $('jsonPreview');
+            const copyBtn = $('copyBtn');
+            const downloadBtn = $('downloadBtn');
+            const resetBtn = $('resetBtn');
+            const toast = $('toast');
+
+            // Modal
+            const modal = $('resetModal');
+            const modalConfirm = $('modalConfirm');
+            const modalCancel = $('modalCancel');
+
+            // ===== Toast =====
+            let toastTimer = null;
+
+            function showToast(msg, type) {
+                toast.textContent = msg;
+                toast.className = 'toast show';
+                if (type === 'success') toast.classList.add('success');
+                if (type === 'error') toast.classList.add('error');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 2000);
+            }
+
+            // ===== UUID generator =====
+            function generateUUID() {
+                if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+                    return crypto.randomUUID();
+                }
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+
+            // ===== Build JSON =====
+            function buildManifest() {
+                const name = inputName.value.trim() || '';
+                const description = inputDesc.value.trim() || '';
+
+                const headerUUID = uuidHeaderEl.value.trim() || generateUUID();
+                const modulesUUID = uuidModulesEl.value.trim() || generateUUID();
+
+                const headerVersion = [
+                    parseInt(hv[0].value) || 0,
+                    parseInt(hv[1].value) || 0,
+                    parseInt(hv[2].value) || 0
+                ];
+                const modulesVersion = [
+                    parseInt(mv[0].value) || 0,
+                    parseInt(mv[1].value) || 0,
+                    parseInt(mv[2].value) || 0
+                ];
+                const minEngineVersion = [
+                    parseInt(mev[0].value) || 0,
+                    parseInt(mev[1].value) || 0,
+                    parseInt(mev[2].value) || 0
+                ];
+
+                return {
+                    format_version: 2,
+                    header: {
+                        description: description,
+                        name: name,
+                        uuid: headerUUID,
+                        version: headerVersion,
+                        min_engine_version: minEngineVersion
+                    },
+                    modules: [{
+                        description: description,
+                        type: 'resources',
+                        uuid: modulesUUID,
+                        version: modulesVersion
+                    }]
+                };
+            }
+
+            // ===== Syntax-highlighted JSON =====
+            function highlightJSON(json) {
+                const str = JSON.stringify(json, null, 2);
+                let escaped = str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return escaped.replace(
+                    /("(?:[^"\\]|\\.)*")(?=\s*:)|("(?:[^"\\]|\\.)*")|(\b\d+\.?\d*\b)|(\btrue\b|\bfalse\b|\bnull\b)|([{}\[\],])/g,
+                    function(match, key, string, number, bool, bracket) {
+                        if (key) return '<span class="hl-key">' + key + '</span>';
+                        if (string) return '<span class="hl-string">' + string + '</span>';
+                        if (number) return '<span class="hl-number">' + number + '</span>';
+                        if (bool) return '<span class="hl-bool">' + bool + '</span>';
+                        if (bracket) return '<span class="hl-bracket">' + bracket + '</span>';
+                        return match;
+                    }
+                );
+            }
+
+            // ===== Update preview and button states =====
+            function updatePreview() {
+                const nameFilled = inputName.value.trim() !== '';
+                const descFilled = inputDesc.value.trim() !== '';
+                const isFilled = nameFilled && descFilled;
+
+                copyBtn.disabled = !isFilled;
+                downloadBtn.disabled = !isFilled;
+
+                const manifest = buildManifest();
+                const highlighted = highlightJSON(manifest);
+                previewEl.innerHTML = highlighted;
+            }
+
+            // ===== Get raw JSON string =====
+            function getRawJSON() {
+                const manifest = buildManifest();
+                return JSON.stringify(manifest, null, 2);
+            }
+
+            // ===== Copy =====
+            function copyJSON() {
+                const raw = getRawJSON();
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(raw).then(() => {
+                        showToast('已复制到剪贴板', 'success');
+                    }).catch(() => {
+                        fallbackCopy(raw);
+                    });
+                } else {
+                    fallbackCopy(raw);
+                }
+            }
+
+            function fallbackCopy(text) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('已复制到剪贴板', 'success');
+                } catch (e) {
+                    showToast('复制失败，请手动复制', 'error');
+                }
+                document.body.removeChild(textarea);
+            }
+
+            // ===== Download =====
+            function downloadJSON() {
+                const raw = getRawJSON();
+                const blob = new Blob([raw], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'manifest.json';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 300);
+                showToast('下载成功', 'success');
+            }
+
+            // ===== Reset =====
+            function performReset() {
+                inputName.value = '';
+                inputDesc.value = '';
+                hv[0].value = '0';
+                hv[1].value = '0';
+                hv[2].value = '1';
+                mv[0].value = '0';
+                mv[1].value = '0';
+                mv[2].value = '1';
+                mev[0].value = '1';
+                mev[1].value = '13';
+                mev[2].value = '0';
+                updatePreview();
+                showToast('已重置版本与名称', 'success');
+            }
+
+            // ===== Modal =====
+            function showModal() {
+                modal.classList.add('active');
+            }
+
+            function hideModal() {
+                modal.classList.remove('active');
+            }
+
+            // ===== Event binding =====
+            const allInputs = [inputName, inputDesc, ...hv, ...mv, ...mev, uuidHeaderEl, uuidModulesEl];
+            allInputs.forEach(el => {
+                el.addEventListener('input', updatePreview);
+                el.addEventListener('change', updatePreview);
+            });
+
+            refreshUuidBtn.addEventListener('click', () => {
+                uuidHeaderEl.value = generateUUID();
+                uuidModulesEl.value = generateUUID();
+                updatePreview();
+                showToast('UUID 已刷新', 'success');
+            });
+
+            resetBtn.addEventListener('click', showModal);
+
+            modalConfirm.addEventListener('click', function() {
+                hideModal();
+                performReset();
+            });
+
+            modalCancel.addEventListener('click', hideModal);
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) hideModal();
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.classList.contains('active')) {
+                    hideModal();
+                }
+                if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+                    if (e.key === 'c' || e.key === 'C') {
+                        e.preventDefault();
+                        if (!copyBtn.disabled) copyJSON();
+                    }
+                    if (e.key === 'd' || e.key === 'D') {
+                        e.preventDefault();
+                        if (!downloadBtn.disabled) downloadJSON();
+                    }
+                }
+            });
+
+            copyBtn.addEventListener('click', copyJSON);
+            downloadBtn.addEventListener('click', downloadJSON);
+
+            // ===== Init =====
+            mev[0].value = '1';
+            mev[1].value = '13';
+            mev[2].value = '0';
+
+            uuidHeaderEl.value = generateUUID();
+            uuidModulesEl.value = generateUUID();
+            updatePreview();
+
+            // Auto-resize textarea
+            inputDesc.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 180) + 'px';
+            });
+            setTimeout(() => {
+                inputDesc.style.height = 'auto';
+                inputDesc.style.height = Math.min(inputDesc.scrollHeight, 180) + 'px';
+            }, 50);
+
+            console.log('Manifest Generator ready');
+        })();
+    </script>
+
+</body>
+</html>
