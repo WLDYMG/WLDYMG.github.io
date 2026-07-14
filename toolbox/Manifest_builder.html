@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Manifest 生成器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js">
+    </script>
     <style>
         /* ========== Reset & Base ========== */
         * {
@@ -97,6 +99,25 @@
             color: #1a3344;
             margin-bottom: 14px;
             letter-spacing: 0.2px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .section-title .btn-sm {
+            padding: 4px 16px;
+            font-size: 0.8rem;
+            border-radius: 30px;
+            border: none;
+            background: #1a5f7e;
+            color: white;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .section-title .btn-sm:hover {
+            background: #0f4a64;
         }
 
         .field-group {
@@ -181,31 +202,6 @@
             box-shadow: 0 0 0 3px rgba(79, 141, 176, 0.10);
         }
 
-        .btn-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border: 1px solid #d0dfeb;
-            border-radius: 30px;
-            background: #fafdff;
-            color: #1f4b66;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: background 0.15s, border-color 0.15s;
-            flex-shrink: 0;
-        }
-
-        .btn-icon:hover {
-            background: #e4eef7;
-            border-color: #b0c8da;
-        }
-
-        .btn-icon:active {
-            transform: scale(0.94);
-        }
-
         /* ========== 版本号输入框 ========== */
         .version-group {
             display: flex;
@@ -216,16 +212,16 @@
 
         .version-group .ver-input {
             width: 54px;
-            padding: 8px 4px;
+            padding: 10px 4px;
             text-align: center;
-            font-size: 15px;
+            font-size: 0.95rem;
             font-weight: 600;
-            border: 1.5px solid #dce1ea;
-            border-radius: 10px;
-            background: #ffffff;
+            border: 1px solid #d0dfeb;
+            border-radius: 18px;
+            background: #fafdff;
             transition: border 0.2s, box-shadow 0.2s;
             font-family: inherit;
-            color: #1e2a3a;
+            color: #0a1f2b;
             -moz-appearance: textfield;
         }
 
@@ -256,6 +252,79 @@
             font-weight: 500;
         }
 
+        /* ========== Subpacks ========== */
+        .subpack-item {
+            background: #f0f5fa;
+            border-radius: 14px;
+            padding: 14px 16px 16px;
+            margin-bottom: 12px;
+            border: 1px solid #dce6ef;
+        }
+        .subpack-item:last-child {
+            margin-bottom: 0;
+        }
+        .subpack-item .subpack-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+        .subpack-item .subpack-row .subpack-field {
+            flex: 1;
+            min-width: 100px;
+        }
+        .subpack-item .subpack-row .subpack-field label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #3d5e73;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .subpack-item .subpack-row .subpack-field input {
+            width: 100%;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            border: 1px solid #c8d8e6;
+            border-radius: 14px;
+            background: white;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .subpack-item .subpack-row .subpack-field input:focus {
+            border-color: #6f9bbd;
+            box-shadow: 0 0 0 3px rgba(79, 141, 176, 0.10);
+        }
+        .subpack-item .subpack-row .subpack-field input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .subpack-item .subpack-row .subpack-field input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .subpack-item .subpack-actions {
+            margin-top: 8px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .subpack-item .subpack-actions .btn-remove {
+            padding: 2px 14px;
+            font-size: 0.75rem;
+            border-radius: 30px;
+            border: none;
+            background: #d9534f;
+            color: white;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .subpack-item .subpack-actions .btn-remove:hover {
+            background: #c9302c;
+        }
+
+        /* 隐藏的文件输入 - 仅允许 zip 和 mcpack */
+        #fileInput {
+            display: none;
+        }
+
         /* ========== Buttons ========== */
         .btn {
             padding: 8px 22px;
@@ -284,6 +353,14 @@
         }
         .btn-outline:hover:not(:disabled) {
             background: #e4eef7;
+        }
+
+        .btn-danger {
+            background: #d9534f;
+            color: white;
+        }
+        .btn-danger:hover:not(:disabled) {
+            background: #c9302c;
         }
 
         .btn:disabled {
@@ -535,7 +612,7 @@
             }
             .version-group .ver-input {
                 width: 44px;
-                padding: 6px 2px;
+                padding: 8px 2px;
                 font-size: 14px;
             }
             .preview-actions {
@@ -554,12 +631,23 @@
             .modal-actions .btn {
                 flex: 1;
             }
+            .subpack-item .subpack-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .subpack-item .subpack-row .subpack-field {
+                min-width: unset;
+            }
+            .section-title .btn-sm {
+                font-size: 0.7rem;
+                padding: 3px 12px;
+            }
         }
 
         @media (max-width: 400px) {
             .version-group .ver-input {
                 width: 38px;
-                padding: 4px 1px;
+                padding: 6px 1px;
                 font-size: 13px;
             }
             .version-group .ver-sep {
@@ -626,38 +714,26 @@
                     </div>
                 </div>
 
-                <!-- 版本号 -->
+                <!-- ========== 版本号（合并为一个 Version） ========== -->
                 <div class="section">
-                    <div class="section-title">版本号</div>
-
-                    <div class="field-group">
-                        <label class="field-label">Header Version</label>
-                        <div class="version-group">
-                            <span class="ver-label">[</span>
-                            <input class="ver-input" id="hv0" type="number" value="0" min="0" max="999" />
-                            <span class="ver-sep">,</span>
-                            <input class="ver-input" id="hv1" type="number" value="0" min="0" max="999" />
-                            <span class="ver-sep">,</span>
-                            <input class="ver-input" id="hv2" type="number" value="1" min="0" max="999" />
-                            <span class="ver-label">]</span>
-                        </div>
-                    </div>
-
-                    <div class="field-group">
-                        <label class="field-label">Modules Version</label>
-                        <div class="version-group">
-                            <span class="ver-label">[</span>
-                            <input class="ver-input" id="mv0" type="number" value="0" min="0" max="999" />
-                            <span class="ver-sep">,</span>
-                            <input class="ver-input" id="mv1" type="number" value="0" min="0" max="999" />
-                            <span class="ver-sep">,</span>
-                            <input class="ver-input" id="mv2" type="number" value="1" min="0" max="999" />
-                            <span class="ver-label">]</span>
-                        </div>
-                    </div>
-
+                    <div class="section-title">Version</div>
                     <div class="field-group" style="margin-bottom:0;">
-                        <label class="field-label">Min Engine Version</label>
+                        <div class="version-group">
+                            <span class="ver-label">[</span>
+                            <input class="ver-input" id="v0" type="number" value="0" min="0" max="999" />
+                            <span class="ver-sep">,</span>
+                            <input class="ver-input" id="v1" type="number" value="0" min="0" max="999" />
+                            <span class="ver-sep">,</span>
+                            <input class="ver-input" id="v2" type="number" value="1" min="0" max="999" />
+                            <span class="ver-label">]</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Min Engine Version -->
+                <div class="section">
+                    <div class="section-title">Min Engine Version</div>
+                    <div class="field-group" style="margin-bottom:0;">
                         <div class="version-group">
                             <span class="ver-label">[</span>
                             <input class="ver-input" id="mev0" type="number" value="1" min="0" max="999" />
@@ -670,9 +746,25 @@
                     </div>
                 </div>
 
-                <!-- 重置按钮 - 使用 btn-primary 与下载按钮风格一致 -->
+                <!-- ========== Subpacks ========== -->
+                <div class="section">
+                    <div class="section-title">
+                        <span>Subpacks</span>
+                        <div>
+                            <button class="btn-sm" id="addSubpackBtn">新建</button>
+                            <button class="btn-sm" id="importSubpackBtn">导入</button>
+                            <!-- 仅允许选择 .zip 和 .mcpack 文件 -->
+                            <input type="file" id="fileInput" accept=".zip,.mcpack,application/zip" />
+                        </div>
+                    </div>
+                    <div id="subpackContainer">
+                        <!-- 动态渲染 subpack 条目 -->
+                    </div>
+                </div>
+
+                <!-- 重置按钮 -->
                 <div class="reset-wrapper">
-                    <button class="btn btn-primary" id="resetBtn">重置</button>
+                    <button class="btn btn-danger" id="resetBtn">重置</button>
                 </div>
             </div>
 
@@ -706,7 +798,7 @@
                     </pre>
                 </div>
 
-                <!-- 复制和下载按钮放在预览框下方，右对齐 -->
+                <!-- 复制和下载按钮 -->
                 <div class="preview-actions">
                     <button class="btn btn-outline" id="copyBtn" disabled>复制</button>
                     <button class="btn btn-primary" id="downloadBtn" disabled>下载</button>
@@ -718,14 +810,26 @@
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
-    <!-- Modal -->
+    <!-- 重置确认模态框 -->
     <div class="modal-overlay" id="resetModal">
         <div class="modal-box">
             <div class="modal-title">确认重置</div>
             <div class="modal-message">是否重置所有版本与名称？</div>
             <div class="modal-actions">
-                <button class="btn btn-outline" id="modalCancel">取消</button>
-                <button class="btn btn-primary" id="modalConfirm">确定</button>
+                <button class="btn btn-outline" id="resetModalCancel">取消</button>
+                <button class="btn btn-danger" id="resetModalConfirm">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-box">
+            <div class="modal-title">确认删除</div>
+            <div class="modal-message">确定要删除此 subpack 吗？</div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="deleteModalCancel">取消</button>
+                <button class="btn btn-danger" id="deleteModalConfirm">确定</button>
             </div>
         </div>
     </div>
@@ -742,8 +846,8 @@
             const uuidModulesEl = $('uuidModules');
             const refreshUuidBtn = $('refreshUuidBtn');
 
-            const hv = [$('hv0'), $('hv1'), $('hv2')];
-            const mv = [$('mv0'), $('mv1'), $('mv2')];
+            // 合并后的 Version
+            const v = [$('v0'), $('v1'), $('v2')];
             const mev = [$('mev0'), $('mev1'), $('mev2')];
 
             const previewEl = $('jsonPreview');
@@ -752,10 +856,24 @@
             const resetBtn = $('resetBtn');
             const toast = $('toast');
 
-            // Modal
-            const modal = $('resetModal');
-            const modalConfirm = $('modalConfirm');
-            const modalCancel = $('modalCancel');
+            // Subpacks
+            const subpackContainer = $('subpackContainer');
+            const addSubpackBtn = $('addSubpackBtn');
+            const importSubpackBtn = $('importSubpackBtn');
+            const fileInput = $('fileInput');
+
+            // 模态框
+            const resetModal = $('resetModal');
+            const resetModalConfirm = $('resetModalConfirm');
+            const resetModalCancel = $('resetModalCancel');
+
+            const deleteModal = $('deleteModal');
+            const deleteModalConfirm = $('deleteModalConfirm');
+            const deleteModalCancel = $('deleteModalCancel');
+
+            // ===== 数据 =====
+            let subpacks = [];
+            let pendingDeleteIndex = -1;
 
             // ===== Toast =====
             let toastTimer = null;
@@ -783,7 +901,7 @@
                 });
             }
 
-            // ===== Build JSON =====
+            // ===== Build JSON (包含 subpacks) =====
             function buildManifest() {
                 const name = inputName.value.trim() || '';
                 const description = inputDesc.value.trim() || '';
@@ -791,15 +909,11 @@
                 const headerUUID = uuidHeaderEl.value.trim() || generateUUID();
                 const modulesUUID = uuidModulesEl.value.trim() || generateUUID();
 
-                const headerVersion = [
-                    parseInt(hv[0].value) || 0,
-                    parseInt(hv[1].value) || 0,
-                    parseInt(hv[2].value) || 0
-                ];
-                const modulesVersion = [
-                    parseInt(mv[0].value) || 0,
-                    parseInt(mv[1].value) || 0,
-                    parseInt(mv[2].value) || 0
+                // 使用统一的 Version
+                const version = [
+                    parseInt(v[0].value) || 0,
+                    parseInt(v[1].value) || 0,
+                    parseInt(v[2].value) || 0
                 ];
                 const minEngineVersion = [
                     parseInt(mev[0].value) || 0,
@@ -807,22 +921,157 @@
                     parseInt(mev[2].value) || 0
                 ];
 
-                return {
+                const result = {
                     format_version: 2,
                     header: {
                         description: description,
                         name: name,
                         uuid: headerUUID,
-                        version: headerVersion,
+                        version: version,
                         min_engine_version: minEngineVersion
                     },
                     modules: [{
                         description: description,
                         type: 'resources',
                         uuid: modulesUUID,
-                        version: modulesVersion
+                        version: version // 与 header.version 相同
                     }]
                 };
+
+                if (subpacks.length > 0) {
+                    result.subpacks = subpacks.map(item => ({
+                        folder_name: item.folder_name || '',
+                        name: item.name || '',
+                        memory_tier: parseInt(item.memory_tier) || 0
+                    }));
+                }
+
+                return result;
+            }
+
+            // ===== 渲染 subpacks UI =====
+            function renderSubpacks() {
+                if (subpacks.length === 0) {
+                    subpackContainer.innerHTML =
+                        '<div style="color:#8aa9bd; font-size:0.85rem; padding:6px 0;">暂无 subpack，点击“新建”添加</div>';
+                    updatePreview();
+                    return;
+                }
+
+                let html = '';
+                subpacks.forEach((item, index) => {
+                    const idxDisplay = index + 1;
+                    html += `
+                        <div class="subpack-item" data-index="${index}">
+                            <div style="font-size:0.8rem; font-weight:500; color:#1f4b66; margin-bottom:6px;">#${idxDisplay}</div>
+                            <div class="subpack-row">
+                                <div class="subpack-field">
+                                    <label>folder_name</label>
+                                    <input type="text" class="subpack-folder" value="${escapeHtml(item.folder_name || '')}" />
+                                </div>
+                                <div class="subpack-field">
+                                    <label>name</label>
+                                    <input type="text" class="subpack-name" value="${escapeHtml(item.name || '')}" />
+                                </div>
+                                <div class="subpack-field">
+                                    <label>memory_tier</label>
+                                    <input type="number" class="subpack-tier" value="${item.memory_tier || 0}" min="0" step="1" />
+                                </div>
+                            </div>
+                            <div class="subpack-actions">
+                                <button class="btn-remove" data-index="${index}">删除</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                subpackContainer.innerHTML = html;
+
+                document.querySelectorAll('.subpack-item').forEach(itemEl => {
+                    const idx = parseInt(itemEl.dataset.index);
+                    const folderInput = itemEl.querySelector('.subpack-folder');
+                    const nameInput = itemEl.querySelector('.subpack-name');
+                    const tierInput = itemEl.querySelector('.subpack-tier');
+                    const removeBtn = itemEl.querySelector('.btn-remove');
+
+                    folderInput.addEventListener('input', function() {
+                        subpacks[idx].folder_name = this.value;
+                        updatePreview();
+                    });
+                    nameInput.addEventListener('input', function() {
+                        subpacks[idx].name = this.value;
+                        updatePreview();
+                    });
+                    tierInput.addEventListener('input', function() {
+                        subpacks[idx].memory_tier = parseInt(this.value) || 0;
+                        updatePreview();
+                    });
+
+                    removeBtn.addEventListener('click', function() {
+                        pendingDeleteIndex = idx;
+                        deleteModal.classList.add('active');
+                    });
+                });
+
+                updatePreview();
+            }
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // ===== 添加 subpack =====
+            function addSubpack() {
+                subpacks.push({ folder_name: '', name: '', memory_tier: 0 });
+                renderSubpacks();
+                showToast('已添加 subpack', 'success');
+            }
+
+            // ===== 导入 subpacks 从 ZIP =====
+            function importSubpacksFromZip(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = e.target.result;
+                    if (typeof JSZip === 'undefined') {
+                        showToast('JSZip 库未加载，请检查网络', 'error');
+                        return;
+                    }
+                    JSZip.loadAsync(data).then(function(zip) {
+                        const folderSet = new Set();
+                        zip.forEach(function(relativePath) {
+                            const parts = relativePath.split('/');
+                            for (let i = 0; i < parts.length - 1; i++) {
+                                if (parts[i].toLowerCase() === 'subpacks') {
+                                    const subFolder = parts[i + 1];
+                                    if (subFolder) {
+                                        folderSet.add(subFolder);
+                                    }
+                                    break;
+                                }
+                            }
+                        });
+
+                        if (folderSet.size === 0) {
+                            showToast('未找到 subpacks 文件夹或其中无子文件夹', 'error');
+                            return;
+                        }
+
+                        folderSet.forEach(folderName => {
+                            subpacks.push({
+                                folder_name: folderName,
+                                name: '',
+                                memory_tier: 0
+                            });
+                        });
+
+                        renderSubpacks();
+                        showToast(`已导入 ${folderSet.size} 个 subpacks`, 'success');
+                    }).catch(function(err) {
+                        showToast('解析 ZIP 文件失败: ' + err.message, 'error');
+                    });
+                };
+                reader.readAsArrayBuffer(file);
             }
 
             // ===== Syntax-highlighted JSON =====
@@ -914,30 +1163,40 @@
             function performReset() {
                 inputName.value = '';
                 inputDesc.value = '';
-                hv[0].value = '0';
-                hv[1].value = '0';
-                hv[2].value = '1';
-                mv[0].value = '0';
-                mv[1].value = '0';
-                mv[2].value = '1';
+                v[0].value = '0';
+                v[1].value = '0';
+                v[2].value = '1';
                 mev[0].value = '1';
                 mev[1].value = '13';
                 mev[2].value = '0';
+                subpacks = [];
+                renderSubpacks();
                 updatePreview();
-                showToast('已重置版本与名称', 'success');
+                showToast('已重置所有内容', 'success');
             }
 
-            // ===== Modal =====
-            function showModal() {
-                modal.classList.add('active');
+            // ===== 删除 subpack =====
+            function performDelete() {
+                if (pendingDeleteIndex >= 0 && pendingDeleteIndex < subpacks.length) {
+                    subpacks.splice(pendingDeleteIndex, 1);
+                    pendingDeleteIndex = -1;
+                    renderSubpacks();
+                    updatePreview();
+                    showToast('已删除 subpack', 'success');
+                }
             }
 
-            function hideModal() {
-                modal.classList.remove('active');
-            }
+            // ===== 模态框控制 =====
+            function showResetModal() { resetModal.classList.add('active'); }
+
+            function hideResetModal() { resetModal.classList.remove('active'); }
+
+            function showDeleteModal() { deleteModal.classList.add('active'); }
+
+            function hideDeleteModal() { deleteModal.classList.remove('active'); }
 
             // ===== Event binding =====
-            const allInputs = [inputName, inputDesc, ...hv, ...mv, ...mev, uuidHeaderEl, uuidModulesEl];
+            const allInputs = [inputName, inputDesc, ...v, ...mev, uuidHeaderEl, uuidModulesEl];
             allInputs.forEach(el => {
                 el.addEventListener('input', updatePreview);
                 el.addEventListener('change', updatePreview);
@@ -950,22 +1209,57 @@
                 showToast('UUID 已刷新', 'success');
             });
 
-            resetBtn.addEventListener('click', showModal);
+            addSubpackBtn.addEventListener('click', addSubpack);
 
-            modalConfirm.addEventListener('click', function() {
-                hideModal();
+            importSubpackBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+
+            // 严格验证文件类型
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (ext !== 'zip' && ext !== 'mcpack') {
+                    showToast('请选择 .zip 或 .mcpack 文件', 'error');
+                    fileInput.value = '';
+                    return;
+                }
+                importSubpacksFromZip(file);
+                fileInput.value = '';
+            });
+
+            // 重置按钮
+            resetBtn.addEventListener('click', showResetModal);
+
+            resetModalConfirm.addEventListener('click', function() {
+                hideResetModal();
                 performReset();
             });
 
-            modalCancel.addEventListener('click', hideModal);
+            resetModalCancel.addEventListener('click', hideResetModal);
 
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) hideModal();
+            resetModal.addEventListener('click', function(e) {
+                if (e.target === resetModal) hideResetModal();
             });
 
+            // 删除确认
+            deleteModalConfirm.addEventListener('click', function() {
+                hideDeleteModal();
+                performDelete();
+            });
+
+            deleteModalCancel.addEventListener('click', hideDeleteModal);
+
+            deleteModal.addEventListener('click', function(e) {
+                if (e.target === deleteModal) hideDeleteModal();
+            });
+
+            // ESC 关闭
             document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && modal.classList.contains('active')) {
-                    hideModal();
+                if (e.key === 'Escape') {
+                    if (resetModal.classList.contains('active')) hideResetModal();
+                    if (deleteModal.classList.contains('active')) hideDeleteModal();
                 }
                 if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
                     if (e.key === 'c' || e.key === 'C') {
@@ -983,15 +1277,19 @@
             downloadBtn.addEventListener('click', downloadJSON);
 
             // ===== Init =====
+            v[0].value = '0';
+            v[1].value = '0';
+            v[2].value = '1';
             mev[0].value = '1';
             mev[1].value = '13';
             mev[2].value = '0';
 
             uuidHeaderEl.value = generateUUID();
             uuidModulesEl.value = generateUUID();
+
+            renderSubpacks();
             updatePreview();
 
-            // Auto-resize textarea
             inputDesc.addEventListener('input', function() {
                 this.style.height = 'auto';
                 this.style.height = Math.min(this.scrollHeight, 180) + 'px';
