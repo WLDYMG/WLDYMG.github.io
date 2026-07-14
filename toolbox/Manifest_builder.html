@@ -753,7 +753,6 @@
                         <div>
                             <button class="btn-sm" id="addSubpackBtn">新建</button>
                             <button class="btn-sm" id="importSubpackBtn">导入</button>
-                            <!-- 扩展 accept 支持更多 MIME 类型 -->
                             <input type="file" id="fileInput" accept=".zip,.mcpack,application/zip,application/x-zip-compressed,application/octet-stream" />
                         </div>
                     </div>
@@ -834,6 +833,18 @@
         </div>
     </div>
 
+    <!-- 导入覆盖确认模态框 -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal-box">
+            <div class="modal-title">确认覆盖</div>
+            <div class="modal-message">确定要覆盖 subpacks 吗？</div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="importModalCancel">取消</button>
+                <button class="btn btn-danger" id="importModalConfirm">确定</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         (function() {
             'use strict';
@@ -871,9 +882,14 @@
             const deleteModalConfirm = $('deleteModalConfirm');
             const deleteModalCancel = $('deleteModalCancel');
 
+            const importModal = $('importModal');
+            const importModalConfirm = $('importModalConfirm');
+            const importModalCancel = $('importModalCancel');
+
             // ===== 数据 =====
             let subpacks = [];
             let pendingDeleteIndex = -1;
+            let pendingImportData = null; // 暂存导入解析的数据
 
             // ===== Toast =====
             let toastTimer = null;
@@ -1028,7 +1044,7 @@
                 showToast('已添加 subpack', 'success');
             }
 
-            // ===== 导入 subpacks 从 ZIP =====
+            // ===== 导入 subpacks 从 ZIP（核心逻辑） =====
             function importSubpacksFromZip(file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -1057,21 +1073,43 @@
                             return;
                         }
 
+                        // 构建导入数据
+                        const importData = [];
                         folderSet.forEach(folderName => {
-                            subpacks.push({
+                            importData.push({
                                 folder_name: folderName,
                                 name: '',
                                 memory_tier: 0
                             });
                         });
 
-                        renderSubpacks();
-                        showToast(`已导入 ${folderSet.size} 个 subpacks`, 'success');
+                        // ★★★ 关键：如果当前 subpacks 为空，直接覆盖（不弹窗）★★★
+                        if (subpacks.length === 0) {
+                            subpacks = importData;
+                            renderSubpacks();
+                            showToast(`已导入 ${importData.length} 个 subpacks`, 'success');
+                            return;
+                        }
+
+                        // 否则（已有 subpacks），暂存数据并显示确认框
+                        pendingImportData = importData;
+                        importModal.classList.add('active');
                     }).catch(function(err) {
                         showToast('解析 ZIP 文件失败: ' + err.message, 'error');
                     });
                 };
                 reader.readAsArrayBuffer(file);
+            }
+
+            // ===== 执行覆盖导入 =====
+            function performImportOverwrite() {
+                if (pendingImportData) {
+                    subpacks = pendingImportData;
+                    pendingImportData = null;
+                    renderSubpacks();
+                    showToast(`已覆盖 ${subpacks.length} 个 subpacks`, 'success');
+                }
+                importModal.classList.remove('active');
             }
 
             // ===== Syntax-highlighted JSON =====
@@ -1195,6 +1233,8 @@
 
             function hideDeleteModal() { deleteModal.classList.remove('active'); }
 
+            function hideImportModal() { importModal.classList.remove('active'); }
+
             // ===== Event binding =====
             const allInputs = [inputName, inputDesc, ...v, ...mev, uuidHeaderEl, uuidModulesEl];
             allInputs.forEach(el => {
@@ -1215,7 +1255,7 @@
                 fileInput.click();
             });
 
-            // 严格验证文件类型
+            // 文件选择后触发导入解析
             fileInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -1255,11 +1295,30 @@
                 if (e.target === deleteModal) hideDeleteModal();
             });
 
+            // 导入覆盖确认
+            importModalConfirm.addEventListener('click', performImportOverwrite);
+
+            importModalCancel.addEventListener('click', function() {
+                pendingImportData = null;
+                hideImportModal();
+            });
+
+            importModal.addEventListener('click', function(e) {
+                if (e.target === importModal) {
+                    pendingImportData = null;
+                    hideImportModal();
+                }
+            });
+
             // ESC 关闭
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
                     if (resetModal.classList.contains('active')) hideResetModal();
                     if (deleteModal.classList.contains('active')) hideDeleteModal();
+                    if (importModal.classList.contains('active')) {
+                        pendingImportData = null;
+                        hideImportModal();
+                    }
                 }
                 if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
                     if (e.key === 'c' || e.key === 'C') {
