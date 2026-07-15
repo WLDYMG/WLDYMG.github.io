@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>你被骗了!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+
+        video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            display: block;
+            background: #000;
+        }
+
+        audio {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <video id="video"
+           muted
+           autoplay
+           playsinline
+           webkit-playsinline
+           x5-playsinline
+           loop
+           preload="auto"
+           src="https://wldymg.github.io/toolbox/spoof/video.mp4">
+    </video>
+
+    <audio id="audio"
+           loop
+           preload="auto"
+           src="https://wldymg.github.io/toolbox/spoof/audio.mp3">
+    </audio>
+
+    <script>
+        (function() {
+            var video = document.getElementById('video');
+            var audio = document.getElementById('audio');
+            var audioPlayed = false;
+
+            function playAudio() {
+                if (audioPlayed) return;
+                audio.play().then(function() {
+                    audioPlayed = true;
+                }).catch(function() {});
+            }
+
+            // 只有视频真正开始播放时，才触发音频
+            video.addEventListener('playing', playAudio);
+
+            // 如果视频已经可以播放（缓存足够），也可能跳过 'playing'，此时主动触发
+            video.addEventListener('canplaythrough', function() {
+                if (video.currentTime > 0 && !audioPlayed) {
+                    playAudio();
+                }
+            });
+
+            // 手势仅用于“解锁”视频自动播放（当浏览器阻止时）
+            // 触摸后只播放视频，不直接播放音频
+            function handleUserGesture() {
+                if (video.paused) {
+                    video.play().catch(function() {});
+                }
+                // 移除监听，只生效一次
+                document.removeEventListener('touchstart', handleUserGesture);
+                document.removeEventListener('click', handleUserGesture);
+            }
+
+            document.addEventListener('touchstart', handleUserGesture, { passive: true });
+            document.addEventListener('click', handleUserGesture, { passive: true });
+
+            // 页面加载后主动尝试播放视频（可能被浏览器允许）
+            video.play().catch(function() {});
+        })();
+    </script>
+
+</body>
+</html>
