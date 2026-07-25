@@ -301,7 +301,7 @@
                 <button class="mode-tab" data-mode="pack">打包</button>
             </div>
         </div>
-        <div class="sub" id="modeSub">将 .brarchive 文件解包为 ZIP 压缩包</div>
+        <div class="sub" id="modeSub">将 .brarchive 文件或含有 .brarchive 文件的 ZIP 压缩包解包为 ZIP 压缩包</div>
 
         <div class="select-area">
             <button class="btn btn-primary" id="selectBtn">选择文件</button>
@@ -521,6 +521,7 @@
         function updateHiddenInput() {
             hiddenInput.value = '';
             if (currentMode === 'unpack') {
+                // 【恢复原始 accept】仅允许 .brarchive，保持与原始行为一致
                 hiddenInput.accept = '.brarchive';
                 hiddenInput.removeAttribute('webkitdirectory');
                 hiddenInput.multiple = true;
@@ -538,8 +539,8 @@
             modeTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.mode === mode));
 
             modeSub.textContent = mode === 'unpack' ?
-                '将 .brarchive 文件解包为 ZIP 压缩包' :
-                '将文件或包含文件的ZIP压缩包打包为.brarchive 文件';
+                '将 .brarchive 文件或含有 .brarchive 文件的 ZIP 压缩包解包为 ZIP 压缩包' :
+                '将文件或包含文件的 ZIP 压缩包打包为 .brarchive 文件';
             outputNameInput.placeholder = mode === 'unpack' ? '输入 ZIP 文件名' : '输入 .brarchive 文件名';
 
             updateHiddenInput();
@@ -557,15 +558,49 @@
         async function addFiles(fileList) {
             const isUnpack = currentMode === 'unpack';
             const toAdd = [];
+            let firstFileName = null; // 用于自动填充输出文件名
 
             for (const file of fileList) {
                 if (isUnpack) {
-                    if (!file.name.toLowerCase().endsWith('.brarchive')) {
-                        log('跳过非 .brarchive 文件: ' + file.name, 'warn');
+                    // ---- 解包模式 ----
+                    if (file.name.toLowerCase().endsWith('.brarchive')) {
+                        toAdd.push({ name: file.name, fileObj: file, data: null, prefix: '' });
+                        if (!firstFileName) firstFileName = file.name;
+                    } else if (file.name.toLowerCase().endsWith('.zip') || file.type === 'application/zip') {
+                        try {
+                            const zip = await JSZip.loadAsync(file);
+                            const entries = Object.entries(zip.files);
+                            let addedCount = 0;
+                            for (const [path, zipEntry] of entries) {
+                                if (zipEntry.dir) continue;
+                                if (!path.toLowerCase().endsWith('.brarchive')) continue;
+                                const data = await zipEntry.async('uint8array');
+                                // 规范化路径
+                                const parts = path.replace(/\\/g, '/').split('/').filter(p => p && p !== '..' && !p
+                                .includes(':'));
+                                if (parts.length === 0) continue;
+                                const fullPath = parts.join('/');
+                                // 目录前缀：去掉最后一个文件名部分
+                                const prefix = parts.slice(0, -1).join('/') + (parts.length > 1 ? '/' : '');
+                                toAdd.push({ name: fullPath, fileObj: null, data: data, prefix: prefix });
+                                addedCount++;
+                            }
+                            if (addedCount > 0) {
+                                log('从 ZIP 中提取 ' + addedCount + ' 个 .brarchive 文件', 'info');
+                                if (!firstFileName) firstFileName = file.name;
+                            } else {
+                                log('ZIP 中未找到 .brarchive 文件: ' + file.name, 'warn');
+                            }
+                        } catch (err) {
+                            log('解析 ZIP 失败: ' + file.name + ' — ' + err.message, 'error');
+                        }
+                        continue;
+                    } else {
+                        log('跳过非 .brarchive/.zip 文件: ' + file.name, 'warn');
                         continue;
                     }
-                    toAdd.push({ name: file.name, data: null, fileObj: file });
                 } else {
+                    // ---- 打包模式 ----
                     const isZip = file.name.toLowerCase().endsWith('.zip') || file.type === 'application/zip';
                     if (isZip) {
                         try {
@@ -582,6 +617,7 @@
                                 addedCount++;
                             }
                             log('解压 ZIP: ' + file.name + '，添加 ' + addedCount + ' 个文件', 'info');
+                            if (!firstFileName) firstFileName = file.name;
                         } catch (err) {
                             log('解压 ZIP 失败: ' + file.name + ' — ' + err.message, 'error');
                         }
@@ -595,6 +631,7 @@
                         continue;
                     }
                     toAdd.push({ name: relPath, data: null, fileObj: file });
+                    if (!firstFileName) firstFileName = file.name;
                 }
             }
 
@@ -607,6 +644,24 @@
             setCurrentFiles(currentFiles.concat(toAdd));
             updateFileNamesDisplay();
             log('添加 ' + toAdd.length + ' 个文件', 'info');
+
+            // ---- 自动填充输出文件名 ----
+            if (firstFileName && !outputNameInput.value.trim()) {
+                let baseName = firstFileName;
+                // 去掉扩展名
+                const dotIndex = baseName.lastIndexOf('.');
+                if (dotIndex > 0) {
+                    baseName = baseName.substring(0, dotIndex);
+                }
+                // 如果是 ZIP 中的路径，只取最后一部分作为文件名
+                const slashIndex = baseName.lastIndexOf('/');
+                if (slashIndex >= 0) {
+                    baseName = baseName.substring(slashIndex + 1);
+                }
+                outputNameInput.value = baseName;
+                updateActionButton();
+            }
+
             updateActionButton();
         }
 
@@ -752,27 +807,52 @@
             }
 
             const files = getCurrentFiles();
-            const brFiles = files.filter(f => {
+            // 过滤出所有 .brarchive 条目（包括从 ZIP 中提取的）
+            const brItems = files.filter(f => {
                 const n = f.fileObj ? f.fileObj.name : (f.name || '');
                 return n.toLowerCase().endsWith('.brarchive');
             });
 
-            if (brFiles.length === 0) {
+            if (brItems.length === 0) {
                 log('没有可解包的 .brarchive 文件', 'warn');
                 showProgress(false);
                 return;
             }
 
-            log('开始解包 ' + brFiles.length + ' 个 .brarchive 文件...', 'info');
-            for (const file of brFiles) {
-                const buffer = await file.fileObj.arrayBuffer();
-                const entries = unpackBrarchive(buffer);
+            log('开始解包 ' + brItems.length + ' 个 .brarchive 文件...', 'info');
+            for (const item of brItems) {
+                let buffer;
+                if (item.data) {
+                    // 从 ZIP 中提取的 .brarchive，已有数据
+                    buffer = item.data.buffer;
+                } else if (item.fileObj) {
+                    // 直接选择的 .brarchive 文件
+                    buffer = await item.fileObj.arrayBuffer();
+                } else {
+                    log('跳过无效条目: ' + (item.name || '?'), 'warn');
+                    processed++;
+                    continue;
+                }
+
+                let entries;
+                try {
+                    entries = unpackBrarchive(buffer);
+                } catch (err) {
+                    log('解包失败: ' + (item.name || '?') + ' — ' + err.message, 'error');
+                    processed++;
+                    continue;
+                }
+
                 if (entries.length > 0) {
-                    entries.forEach(e => addFileWithRename(e.name, e.data));
+                    const prefix = item.prefix || '';
+                    entries.forEach(e => {
+                        const fullPath = prefix + e.name;
+                        addFileWithRename(fullPath, e.data);
+                    });
                     totalEntries += entries.length;
                 }
                 processed++;
-                updateProgress((processed / brFiles.length) * 100);
+                updateProgress((processed / brItems.length) * 100);
             }
 
             if (totalEntries === 0) {
