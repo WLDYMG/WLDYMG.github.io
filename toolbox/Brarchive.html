@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Brarchive 工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js">
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 760px;
+            margin: 2rem auto;
+            padding: 0 20px;
+            background: #fafbfc;
+            color: #1e293b;
+        }
+        .card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 28px 30px 30px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.05);
+            border: 2px solid transparent;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .card.dragover {
+            border-color: #2563eb;
+            background: #f0f7ff;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: -0.3px;
+        }
+        .sub {
+            color: #64748b;
+            font-size: 14px;
+            margin: 0 0 18px 0;
+        }
+        .mode-tabs {
+            display: flex;
+            gap: 4px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 3px;
+            flex-shrink: 0;
+        }
+        .mode-tab {
+            padding: 6px 18px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            background: transparent;
+            color: #64748b;
+            transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+        }
+        .mode-tab:hover {
+            color: #1e293b;
+        }
+        .mode-tab.active {
+            background: #fff;
+            color: #1e293b;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 22px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s, opacity 0.15s;
+            background: #f1f5f9;
+            color: #1e293b;
+            white-space: nowrap;
+        }
+        .btn:hover {
+            background: #e2e8f0;
+        }
+        .btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: default;
+            background: #2563eb;
+        }
+        .btn-success {
+            background: #16a34a;
+            color: #fff;
+        }
+        .btn-success:hover {
+            background: #15803d;
+        }
+        .btn-success:disabled {
+            opacity: 0.5;
+            cursor: default;
+            background: #16a34a;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #d1d5db;
+        }
+        .btn-outline:hover {
+            background: #f8fafc;
+        }
+        /* 按钮作为文件选择容器，点击区域严格限制在按钮内 */
+        .btn-file-input {
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-file-input input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+            border: none;
+            background: transparent;
+        }
+        .select-area {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .file-names-box {
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            padding: 4px 8px;
+            background: #f8fafc;
+            font-size: 13px;
+            color: #1e293b;
+            min-width: 60px;
+            max-width: 240px;
+            max-height: 82px;
+            overflow-y: auto;
+            display: none;
+            flex: 0 1 auto;
+            word-break: break-all;
+            line-height: 1.4;
+            transition: border-color 0.2s;
+        }
+        .file-names-box.visible {
+            display: block;
+        }
+        .file-names-box .file-item {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-names-box.valid {
+            border-color: #16a34a;
+        }
+        .file-names-box.invalid {
+            border-color: #dc2626;
+        }
+        .file-names-box .file-item+.file-item {
+            border-top: 1px solid #e9edf2;
+            padding-top: 1px;
+            margin-top: 1px;
+        }
+        .mode-hint {
+            font-size: 13px;
+            color: #64748b;
+            margin-left: 4px;
+        }
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin: 14px 0 10px 0;
+        }
+        .info-row label {
+            font-size: 14px;
+            color: #1e293b;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .info-row input[type="text"] {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            font-size: 14px;
+            background: #f8fafc;
+            color: #1e293b;
+            min-width: 160px;
+            flex: 0 1 auto;
+            transition: border-color 0.2s;
+        }
+        .info-row input[type="text"]:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        .info-row .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        /* 让清空按钮与下载按钮等宽 */
+        .info-row .btn-group .btn {
+            flex: 1 1 0;
+            min-width: 80px;
+        }
+        .progress-wrapper {
+            height: 6px;
+            background: #e9edf2;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 12px 0 4px 0;
+            display: none;
+        }
+        .progress-wrapper .fill {
+            height: 100%;
+            width: 0%;
+            background: #2563eb;
+            transition: width 0.25s ease;
+            border-radius: 4px;
+        }
+        .progress-percent {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            color: #1e293b;
+            margin-bottom: 6px;
+            display: none;
+        }
+        #log {
+            background: #f8fafc;
+            border: 1px solid #e9edf2;
+            padding: 10px 14px;
+            border-radius: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            font-size: 13px;
+            font-family: 'SF Mono', 'Menlo', monospace;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            color: #1e293b;
+            margin-top: 8px;
+        }
+        #log .log-info {
+            color: #2563eb;
+        }
+        #log .log-warn {
+            color: #d97706;
+        }
+        #log .log-error {
+            color: #dc2626;
+        }
+        #log .log-success {
+            color: #16a34a;
+        }
+        @media (max-width: 600px) {
+            .card {
+                padding: 18px 16px;
+            }
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .mode-tabs {
+                align-self: flex-start;
+            }
+            .select-area {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .file-names-box {
+                max-width: 100%;
+            }
+            .info-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .info-row .btn-group {
+                flex-wrap: wrap;
+            }
+            .info-row input[type="text"] {
+                min-width: unset;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card" id="dropZone">
+        <div class="header">
+            <h1>BRArchive 工具</h1>
+            <div class="mode-tabs" id="modeTabs">
+                <button class="mode-tab active" data-mode="unpack">解包</button>
+                <button class="mode-tab" data-mode="pack">打包</button>
+            </div>
+        </div>
+        <div class="sub" id="modeSub">将 .brarchive 文件解包为 ZIP 压缩包</div>
+
+        <div class="select-area">
+            <button class="btn btn-primary btn-file-input" id="selectBtn">
+                选择文件
+                <!-- 此处的 input 将被 JavaScript 动态重建 -->
+            </button>
+            <div class="file-names-box" id="selectedFileNamesBox"></div>
+            <span class="mode-hint" id="modeHint"></span>
+        </div>
+
+        <div class="info-row">
+            <label for="outputName">输出文件名</label>
+            <input type="text" id="outputName" placeholder="输入文件名" />
+            <div class="btn-group">
+                <button class="btn btn-success" id="actionBtn" disabled>下载 ZIP</button>
+                <button class="btn btn-outline" id="clearBtn">清空</button>
+            </div>
+        </div>
+
+        <div class="progress-wrapper" id="progressWrapper">
+            <div class="fill" id="progressFill"></div>
+        </div>
+        <div class="progress-percent" id="progressPercent">0%</div>
+
+        <div id="log"></div>
+    </div>
+
+    <script>
+        // ===== 核心常量 =====
+        const MAGIC = 0x267052A0B125277Dn;
+        const HEADER_SIZE = 16;
+        const ENTRY_SIZE = 256;
+        const MAX_NAME_LEN = 247;
+
+        // ===== 解包 =====
+        function unpackBrarchive(buffer) {
+            const view = new DataView(buffer);
+            const size = buffer.byteLength;
+            if (size < HEADER_SIZE) throw new Error('文件太小');
+            if (view.getBigUint64(0, true) !== MAGIC) throw new Error('魔数不匹配');
+            const count = view.getUint32(8, true);
+            const version = view.getUint32(12, true);
+            if (version !== 1) throw new Error('不支持的版本 ' + version);
+            const base = HEADER_SIZE + count * ENTRY_SIZE;
+            if (base >= size) return [];
+
+            const files = [];
+            for (let i = 0; i < count; i++) {
+                const pos = HEADER_SIZE + i * ENTRY_SIZE;
+                const nameLen = view.getUint8(pos);
+                if (nameLen === 0 || nameLen > 247) continue;
+                const nameBytes = new Uint8Array(buffer, pos + 1, nameLen);
+                let name = new TextDecoder().decode(nameBytes).replace(/[<>:"|?*]/g, '_');
+                const offset = view.getUint32(pos + 248, true);
+                const length = view.getUint32(pos + 252, true);
+                if (length === 0) continue;
+                const start = base + offset;
+                if (start + length > size) throw new Error('条目 "' + name + '" 越界');
+                const parts = name.split('/').filter(p => p && p !== '..' && !p.includes(':'));
+                const safe = parts.join('/');
+                if (safe) files.push({ name: safe, data: new Uint8Array(buffer, start, length) });
+            }
+            return files;
+        }
+
+        // ===== 打包 =====
+        function packBrarchive(files) {
+            const count = files.length;
+            if (count === 0) throw new Error('没有文件');
+
+            let contentOffset = 0;
+            const entries = [];
+            const contentChunks = [];
+
+            for (const f of files) {
+                const nameBytes = new TextEncoder().encode(f.name);
+                if (nameBytes.length > MAX_NAME_LEN) throw new Error('文件名过长: ' + f.name);
+                const data = f.data;
+                entries.push({ nameBytes, offset: contentOffset, length: data.length });
+                contentChunks.push(data);
+                contentOffset += data.length;
+            }
+
+            const totalSize = HEADER_SIZE + count * ENTRY_SIZE + contentOffset;
+            const buffer = new ArrayBuffer(totalSize);
+            const view = new DataView(buffer);
+
+            view.setBigUint64(0, MAGIC, true);
+            view.setUint32(8, count, true);
+            view.setUint32(12, 1, true);
+
+            let pos = HEADER_SIZE;
+            for (const entry of entries) {
+                const nameLen = entry.nameBytes.length;
+                view.setUint8(pos, nameLen);
+                for (let i = 0; i < nameLen; i++) view.setUint8(pos + 1 + i, entry.nameBytes[i]);
+                for (let i = nameLen; i < MAX_NAME_LEN; i++) view.setUint8(pos + 1 + i, 0);
+                view.setUint32(pos + 248, entry.offset, true);
+                view.setUint32(pos + 252, entry.length, true);
+                pos += ENTRY_SIZE;
+            }
+
+            let writePos = HEADER_SIZE + count * ENTRY_SIZE;
+            for (const chunk of contentChunks) {
+                new Uint8Array(buffer, writePos, chunk.length).set(chunk);
+                writePos += chunk.length;
+            }
+            return buffer;
+        }
+
+        // ===== UI 状态 =====
+        const modeTabs = document.querySelectorAll('.mode-tab');
+        const modeSub = document.getElementById('modeSub');
+        const modeHint = document.getElementById('modeHint');
+        const fileNamesBox = document.getElementById('selectedFileNamesBox');
+        const outputNameInput = document.getElementById('outputName');
+        const actionBtn = document.getElementById('actionBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const progressWrapper = document.getElementById('progressWrapper');
+        const progressFill = document.getElementById('progressFill');
+        const progressPercent = document.getElementById('progressPercent');
+        const logDiv = document.getElementById('log');
+        const dropZone = document.getElementById('dropZone');
+        const selectBtn = document.getElementById('selectBtn');
+
+        let currentMode = 'unpack';
+        let selectedFiles = [];
+        let fileInput = null; // 当前 input 元素
+
+        // ===== 辅助函数 =====
+        function showProgress(show) {
+            progressWrapper.style.display = show ? 'block' : 'none';
+            progressPercent.style.display = show ? 'block' : 'none';
+        }
+
+        function updateProgress(percent) {
+            const p = Math.min(100, Math.max(0, percent));
+            progressFill.style.width = p + '%';
+            progressPercent.textContent = Math.round(p) + '%';
+        }
+
+        function log(msg, type) {
+            type = type || 'info';
+            const cls = { info: 'log-info', warn: 'log-warn', error: 'log-error', success: 'log-success' } [type] ||
+                'log-info';
+            const prefix = { info: '[信息] ', warn: '[警告] ', error: '[错误] ', success: '[完成] ' } [type] || '[信息] ';
+            const line = document.createElement('div');
+            line.innerHTML = '<span class="' + cls + '">' + prefix + msg + '</span>';
+            logDiv.appendChild(line);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() { logDiv.innerHTML = ''; }
+
+        function updateFileNamesDisplay() {
+            if (selectedFiles.length === 0) {
+                fileNamesBox.classList.remove('visible', 'valid', 'invalid');
+                fileNamesBox.innerHTML = '';
+                showProgress(false);
+                return;
+            }
+            let html = '';
+            let allValid = true;
+            const isUnpack = currentMode === 'unpack';
+            selectedFiles.forEach(f => {
+                const name = f.fileObj ? f.fileObj.name : (f.name || '?');
+                if (isUnpack && !name.toLowerCase().endsWith('.brarchive')) allValid = false;
+                html += `<div class="file-item">${name}</div>`;
+            });
+            fileNamesBox.innerHTML = html;
+            fileNamesBox.classList.add('visible');
+            fileNamesBox.classList.remove('valid', 'invalid');
+            if (isUnpack) {
+                fileNamesBox.classList.add(allValid ? 'valid' : 'invalid');
+            } else {
+                fileNamesBox.classList.add('valid');
+            }
+            showProgress(false);
+        }
+
+        function updateActionButton() {
+            const hasName = outputNameInput.value.trim().length > 0;
+            let hasValidFiles = false;
+            if (currentMode === 'unpack') {
+                hasValidFiles = selectedFiles.length > 0 && selectedFiles.every(f => {
+                    const n = f.fileObj ? f.fileObj.name : (f.name || '');
+                    return n.toLowerCase().endsWith('.brarchive');
+                });
+            } else {
+                hasValidFiles = selectedFiles.length > 0;
+            }
+            actionBtn.disabled = !(hasName && hasValidFiles);
+            actionBtn.textContent = currentMode === 'unpack' ? '解包并下载 ZIP' : '下载 .brarchive';
+        }
+
+        function clearAll() {
+            selectedFiles = [];
+            if (fileInput) fileInput.value = '';
+            outputNameInput.value = '';
+            updateFileNamesDisplay();
+            clearLog();
+            showProgress(false);
+            updateProgress(0);
+            updateActionButton();
+            log('已清空', 'info');
+        }
+
+        // ===== 重建文件输入控件 =====
+        function rebuildFileInput() {
+            // 移除旧的 input（如果存在）
+            const oldInput = selectBtn.querySelector('input[type="file"]');
+            if (oldInput) oldInput.remove();
+
+            // 创建新 input
+            const newInput = document.createElement('input');
+            newInput.type = 'file';
+            newInput.multiple = true;
+
+            // 根据当前模式设置属性
+            if (currentMode === 'unpack') {
+                newInput.accept = '.brarchive';
+                // 解包模式：不设置 webkitdirectory，以支持选择单个文件
+                // 但为了兼容，我们允许用户选择文件夹，但之后会过滤
+                // 但为了更好的体验，我们可以不设置 webkitdirectory
+                // 如果用户想选择多个 .brarchive 文件，可以多选
+                // 所以我们不设置 webkitdirectory
+            } else {
+                // 打包模式：支持选择文件夹
+                newInput.setAttribute('webkitdirectory', '');
+                newInput.accept = '*/*';
+            }
+
+            // 追加到按钮中
+            selectBtn.appendChild(newInput);
+            fileInput = newInput;
+
+            // 绑定 change 事件
+            newInput.addEventListener('change', function(e) {
+                if (this.files.length) {
+                    addFiles(this.files);
+                }
+                this.value = ''; // 清空，以便再次选择相同文件
+            });
+        }
+
+        // ===== 模式切换 =====
+        function setMode(mode) {
+            if (mode === currentMode) return;
+            currentMode = mode;
+            modeTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.mode === mode));
+
+            if (mode === 'unpack') {
+                modeSub.textContent = '将 .brarchive 文件解包为 ZIP 压缩包';
+                selectBtn.textContent = '选择文件';
+                outputNameInput.placeholder = '输入 ZIP 文件名';
+            } else {
+                modeSub.textContent = '将文件或包含文件的ZIP压缩包打包为.brarchive 文件';
+                selectBtn.textContent = '选择文件';
+                outputNameInput.placeholder = '输入 .brarchive 文件名';
+            }
+
+            // 重建 input 以保证属性正确且无残留状态
+            rebuildFileInput();
+
+            // 保留 selectedFiles，更新显示和按钮状态
+            updateFileNamesDisplay();
+            updateActionButton();
+            clearLog();
+            showProgress(false);
+            updateProgress(0);
+        }
+
+        modeTabs.forEach(tab => {
+            tab.addEventListener('click', function() { setMode(this.dataset.mode); });
+        });
+
+        // ===== 添加文件 =====
+        async function addFiles(fileList) {
+            const isUnpack = currentMode === 'unpack';
+            const toAdd = [];
+
+            for (const file of fileList) {
+                if (isUnpack) {
+                    // 解包模式只接受 .brarchive
+                    if (!file.name.toLowerCase().endsWith('.brarchive')) {
+                        log('跳过非 .brarchive 文件: ' + file.name, 'warn');
+                        continue;
+                    }
+                    toAdd.push({ name: file.name, data: null, fileObj: file });
+                } else {
+                    // 打包模式：支持 ZIP 自动解压
+                    const isZip = file.name.toLowerCase().endsWith('.zip') || file.type === 'application/zip';
+                    if (isZip) {
+                        try {
+                            const zip = await JSZip.loadAsync(file);
+                            const entries = Object.entries(zip.files);
+                            let addedCount = 0;
+                            for (const [path, zipEntry] of entries) {
+                                if (zipEntry.dir) continue;
+                                const data = await zipEntry.async('uint8array');
+                                let relPath = path.replace(/\\/g, '/');
+                                const parts = relPath.split('/').filter(p => p && p !== '..' && !p.includes(':'));
+                                if (parts.length === 0) continue;
+                                toAdd.push({ name: parts.join('/'), data: data, fileObj: null });
+                                addedCount++;
+                            }
+                            log('解压 ZIP: ' + file.name + '，添加 ' + addedCount + ' 个文件', 'info');
+                        } catch (err) {
+                            log('解压 ZIP 失败: ' + file.name + ' — ' + err.message, 'error');
+                        }
+                        continue;
+                    }
+
+                    let relPath = file.webkitRelativePath || file.name;
+                    const parts = relPath.replace(/\\/g, '/').split('/');
+                    if (parts.some(p => p === '..' || p === '' || p.includes(':'))) {
+                        log('跳过不安全路径: ' + relPath, 'warn');
+                        continue;
+                    }
+                    toAdd.push({ name: relPath, data: null, fileObj: file });
+                }
+            }
+
+            if (toAdd.length === 0) {
+                log('没有可添加的文件', 'warn');
+                return;
+            }
+
+            selectedFiles = selectedFiles.concat(toAdd);
+            updateFileNamesDisplay();
+            log('添加 ' + toAdd.length + ' 个文件', 'info');
+            updateActionButton();
+        }
+
+        async function readAllPendingFiles() {
+            const needRead = selectedFiles.filter(f => f.fileObj && !f.data);
+            if (needRead.length === 0) return;
+            log('正在读取 ' + needRead.length + ' 个文件内容...', 'info');
+            for (const f of needRead) {
+                const buffer = await f.fileObj.arrayBuffer();
+                f.data = new Uint8Array(buffer);
+            }
+        }
+
+        // ===== 事件绑定 =====
+        outputNameInput.addEventListener('input', updateActionButton);
+        clearBtn.addEventListener('click', clearAll);
+
+        dropZone.addEventListener('dragover', e => { e.preventDefault();
+            dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', e => { e.preventDefault();
+            dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const items = e.dataTransfer.items;
+            if (!items) return;
+
+            const allFileEntries = [];
+            const queue = [];
+            for (let item of items) {
+                const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+                if (entry) queue.push(entry);
+            }
+
+            while (queue.length) {
+                const entry = queue.shift();
+                if (entry.isFile) {
+                    allFileEntries.push(entry);
+                } else if (entry.isDirectory) {
+                    const reader = entry.createReader();
+                    const readEntries = () => {
+                        return new Promise((resolve, reject) => {
+                            reader.readEntries((entries) => {
+                                if (entries.length === 0) resolve([]);
+                                else { queue.push(...entries);
+                                    readEntries().then(resolve).catch(reject); }
+                            }, reject);
+                        });
+                    };
+                    await readEntries();
+                }
+            }
+
+            if (allFileEntries.length === 0) {
+                log('拖拽中未找到文件', 'warn');
+                return;
+            }
+
+            const files = [];
+            for (const entry of allFileEntries) {
+                const file = await new Promise((resolve, reject) => { entry.file(resolve, reject); });
+                Object.defineProperty(file, 'webkitRelativePath', { value: entry.fullPath.slice(1), writable: false });
+                files.push(file);
+            }
+            await addFiles(files);
+        });
+
+        // ===== 主操作 =====
+        actionBtn.addEventListener('click', async function() {
+            if (selectedFiles.length === 0) {
+                log('请先选择文件', 'warn');
+                return;
+            }
+            const baseName = outputNameInput.value.trim();
+            if (!baseName) {
+                log('请输入文件名', 'warn');
+                return;
+            }
+
+            // 解包模式下检查所有文件是否为 .brarchive
+            if (currentMode === 'unpack') {
+                const invalid = selectedFiles.some(f => {
+                    const n = f.fileObj ? f.fileObj.name : (f.name || '');
+                    return !n.toLowerCase().endsWith('.brarchive');
+                });
+                if (invalid) {
+                    log('存在无效文件（非 .brarchive），请移除后再试', 'error');
+                    return;
+                }
+            }
+
+            this.disabled = true;
+            showProgress(true);
+            updateProgress(0);
+            await new Promise(r => setTimeout(r, 50));
+
+            try {
+                if (currentMode === 'unpack') {
+                    await doUnpack(baseName);
+                } else {
+                    await doPack(baseName);
+                }
+            } catch (err) {
+                log('操作失败: ' + err.message, 'error');
+                console.error(err);
+                showProgress(false);
+                updateProgress(0);
+            }
+            this.disabled = false;
+            updateActionButton();
+        });
+
+        async function doUnpack(baseName) {
+            const zip = new JSZip();
+            let totalEntries = 0;
+            let processed = 0;
+            const usedPaths = new Set();
+
+            function addFileWithRename(entryName, data) {
+                let finalName = entryName;
+                let counter = 1;
+                const base = entryName;
+                while (usedPaths.has(finalName)) {
+                    const dot = base.lastIndexOf('.');
+                    if (dot > 0) finalName = base.slice(0, dot) + ' (' + counter + ')' + base.slice(dot);
+                    else finalName = base + ' (' + counter + ')';
+                    counter++;
+                }
+                usedPaths.add(finalName);
+                zip.file(finalName, data);
+            }
+
+            // 过滤出 .brarchive 文件
+            const brFiles = selectedFiles.filter(f => {
+                const n = f.fileObj ? f.fileObj.name : (f.name || '');
+                return n.toLowerCase().endsWith('.brarchive');
+            });
+
+            if (brFiles.length === 0) {
+                log('没有可解包的 .brarchive 文件', 'warn');
+                showProgress(false);
+                return;
+            }
+
+            log('开始解包 ' + brFiles.length + ' 个 .brarchive 文件...', 'info');
+            for (const file of brFiles) {
+                const buffer = await file.fileObj.arrayBuffer();
+                const entries = unpackBrarchive(buffer);
+                if (entries.length > 0) {
+                    entries.forEach(e => addFileWithRename(e.name, e.data));
+                    totalEntries += entries.length;
+                }
+                processed++;
+                updateProgress((processed / brFiles.length) * 100);
+            }
+
+            if (totalEntries === 0) {
+                log('没有提取到任何文件，取消下载', 'warn');
+                showProgress(false);
+                updateProgress(0);
+                return;
+            }
+
+            log('生成 ZIP 压缩包...', 'info');
+            const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+            log('ZIP 生成完成，大小 ' + (blob.size / 1024).toFixed(1) + ' KB', 'success');
+            updateProgress(100);
+            const fileName = baseName.endsWith('.zip') ? baseName : baseName + '.zip';
+            downloadBlob(blob, fileName);
+        }
+
+        async function doPack(baseName) {
+            await readAllPendingFiles();
+            const missing = selectedFiles.some(f => !f.data);
+            if (missing) {
+                log('部分文件读取失败，请重新添加', 'error');
+                showProgress(false);
+                updateProgress(0);
+                return;
+            }
+
+            if (selectedFiles.length === 0) {
+                log('没有可打包的文件', 'warn');
+                showProgress(false);
+                return;
+            }
+
+            log('开始打包 ' + selectedFiles.length + ' 个文件...', 'info');
+            const packData = selectedFiles.map(f => ({ name: f.name, data: f.data }));
+            const buffer = packBrarchive(packData);
+            log('打包完成，大小 ' + (buffer.byteLength / 1024).toFixed(1) + ' KB', 'success');
+            updateProgress(100);
+            const blob = new Blob([buffer], { type: 'application/octet-stream' });
+            const fileName = baseName.endsWith('.brarchive') ? baseName : baseName + '.brarchive';
+            downloadBlob(blob, fileName);
+        }
+
+        function downloadBlob(blob, fileName) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+        }
+
+        // ===== 初始化 =====
+        setMode('unpack');
+        clearLog();
+        // 不输出欢迎信息
+    </script>
+
+</body>
+</html>
