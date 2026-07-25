@@ -125,30 +125,20 @@
         .btn-outline:hover {
             background: #f8fafc;
         }
-        /* 按钮作为文件选择容器，点击区域严格限制在按钮内 */
-        .btn-file-input {
-            position: relative;
-            overflow: hidden;
-        }
-        .btn-file-input input[type="file"] {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-            margin: 0;
-            padding: 0;
-            border: none;
-            background: transparent;
-        }
         .select-area {
             display: flex;
             align-items: center;
             gap: 14px;
             flex-wrap: wrap;
             margin-bottom: 12px;
+        }
+        #hiddenFileInput {
+            position: absolute;
+            opacity: 0;
+            width: 0.1px;
+            height: 0.1px;
+            pointer-events: none;
+            z-index: -1;
         }
         .file-names-box {
             border: 2px solid #d1d5db;
@@ -180,16 +170,6 @@
         }
         .file-names-box.invalid {
             border-color: #dc2626;
-        }
-        .file-names-box .file-item+.file-item {
-            border-top: 1px solid #e9edf2;
-            padding-top: 1px;
-            margin-top: 1px;
-        }
-        .mode-hint {
-            font-size: 13px;
-            color: #64748b;
-            margin-left: 4px;
         }
         .info-row {
             display: flex;
@@ -226,7 +206,6 @@
             flex: 1 1 auto;
             min-width: 0;
         }
-        /* 让清空按钮与下载按钮等宽 */
         .info-row .btn-group .btn {
             flex: 1 1 0;
             min-width: 80px;
@@ -316,7 +295,7 @@
 
     <div class="card" id="dropZone">
         <div class="header">
-            <h1>BRArchive 工具</h1>
+            <h1>Brarchive 工具</h1>
             <div class="mode-tabs" id="modeTabs">
                 <button class="mode-tab active" data-mode="unpack">解包</button>
                 <button class="mode-tab" data-mode="pack">打包</button>
@@ -325,12 +304,9 @@
         <div class="sub" id="modeSub">将 .brarchive 文件解包为 ZIP 压缩包</div>
 
         <div class="select-area">
-            <button class="btn btn-primary btn-file-input" id="selectBtn">
-                选择文件
-                <!-- 此处的 input 将被 JavaScript 动态重建 -->
-            </button>
+            <button class="btn btn-primary" id="selectBtn">选择文件</button>
+            <input type="file" id="hiddenFileInput" multiple />
             <div class="file-names-box" id="selectedFileNamesBox"></div>
-            <span class="mode-hint" id="modeHint"></span>
         </div>
 
         <div class="info-row">
@@ -436,7 +412,6 @@
         // ===== UI 状态 =====
         const modeTabs = document.querySelectorAll('.mode-tab');
         const modeSub = document.getElementById('modeSub');
-        const modeHint = document.getElementById('modeHint');
         const fileNamesBox = document.getElementById('selectedFileNamesBox');
         const outputNameInput = document.getElementById('outputName');
         const actionBtn = document.getElementById('actionBtn');
@@ -447,10 +422,23 @@
         const logDiv = document.getElementById('log');
         const dropZone = document.getElementById('dropZone');
         const selectBtn = document.getElementById('selectBtn');
+        const hiddenInput = document.getElementById('hiddenFileInput');
 
         let currentMode = 'unpack';
-        let selectedFiles = [];
-        let fileInput = null; // 当前 input 元素
+        let unpackFiles = [];
+        let packFiles = [];
+
+        function getCurrentFiles() {
+            return currentMode === 'unpack' ? unpackFiles : packFiles;
+        }
+
+        function setCurrentFiles(files) {
+            if (currentMode === 'unpack') {
+                unpackFiles = files;
+            } else {
+                packFiles = files;
+            }
+        }
 
         // ===== 辅助函数 =====
         function showProgress(show) {
@@ -475,10 +463,9 @@
             logDiv.scrollTop = logDiv.scrollHeight;
         }
 
-        function clearLog() { logDiv.innerHTML = ''; }
-
         function updateFileNamesDisplay() {
-            if (selectedFiles.length === 0) {
+            const files = getCurrentFiles();
+            if (files.length === 0) {
                 fileNamesBox.classList.remove('visible', 'valid', 'invalid');
                 fileNamesBox.innerHTML = '';
                 showProgress(false);
@@ -487,7 +474,7 @@
             let html = '';
             let allValid = true;
             const isUnpack = currentMode === 'unpack';
-            selectedFiles.forEach(f => {
+            files.forEach(f => {
                 const name = f.fileObj ? f.fileObj.name : (f.name || '?');
                 if (isUnpack && !name.toLowerCase().endsWith('.brarchive')) allValid = false;
                 html += `<div class="file-item">${name}</div>`;
@@ -505,67 +492,43 @@
 
         function updateActionButton() {
             const hasName = outputNameInput.value.trim().length > 0;
+            const files = getCurrentFiles();
             let hasValidFiles = false;
             if (currentMode === 'unpack') {
-                hasValidFiles = selectedFiles.length > 0 && selectedFiles.every(f => {
+                hasValidFiles = files.length > 0 && files.every(f => {
                     const n = f.fileObj ? f.fileObj.name : (f.name || '');
                     return n.toLowerCase().endsWith('.brarchive');
                 });
             } else {
-                hasValidFiles = selectedFiles.length > 0;
+                hasValidFiles = files.length > 0;
             }
             actionBtn.disabled = !(hasName && hasValidFiles);
-            actionBtn.textContent = currentMode === 'unpack' ? '解包并下载 ZIP' : '下载 .brarchive';
+            actionBtn.textContent = currentMode === 'unpack' ? '下载 ZIP' : '下载 .brarchive';
         }
 
         function clearAll() {
-            selectedFiles = [];
-            if (fileInput) fileInput.value = '';
+            setCurrentFiles([]);
+            hiddenInput.value = '';
             outputNameInput.value = '';
             updateFileNamesDisplay();
-            clearLog();
+            log('已清空', 'info');
             showProgress(false);
             updateProgress(0);
             updateActionButton();
-            log('已清空', 'info');
         }
 
-        // ===== 重建文件输入控件 =====
-        function rebuildFileInput() {
-            // 移除旧的 input（如果存在）
-            const oldInput = selectBtn.querySelector('input[type="file"]');
-            if (oldInput) oldInput.remove();
-
-            // 创建新 input
-            const newInput = document.createElement('input');
-            newInput.type = 'file';
-            newInput.multiple = true;
-
-            // 根据当前模式设置属性
+        // ===== 更新隐藏 input 属性 =====
+        function updateHiddenInput() {
+            hiddenInput.value = '';
             if (currentMode === 'unpack') {
-                newInput.accept = '.brarchive';
-                // 解包模式：不设置 webkitdirectory，以支持选择单个文件
-                // 但为了兼容，我们允许用户选择文件夹，但之后会过滤
-                // 但为了更好的体验，我们可以不设置 webkitdirectory
-                // 如果用户想选择多个 .brarchive 文件，可以多选
-                // 所以我们不设置 webkitdirectory
+                hiddenInput.accept = '.brarchive';
+                hiddenInput.removeAttribute('webkitdirectory');
+                hiddenInput.multiple = true;
             } else {
-                // 打包模式：支持选择文件夹
-                newInput.setAttribute('webkitdirectory', '');
-                newInput.accept = '*/*';
+                hiddenInput.setAttribute('webkitdirectory', '');
+                hiddenInput.accept = '*/*';
+                hiddenInput.multiple = true;
             }
-
-            // 追加到按钮中
-            selectBtn.appendChild(newInput);
-            fileInput = newInput;
-
-            // 绑定 change 事件
-            newInput.addEventListener('change', function(e) {
-                if (this.files.length) {
-                    addFiles(this.files);
-                }
-                this.value = ''; // 清空，以便再次选择相同文件
-            });
         }
 
         // ===== 模式切换 =====
@@ -574,23 +537,14 @@
             currentMode = mode;
             modeTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.mode === mode));
 
-            if (mode === 'unpack') {
-                modeSub.textContent = '将 .brarchive 文件解包为 ZIP 压缩包';
-                selectBtn.textContent = '选择文件';
-                outputNameInput.placeholder = '输入 ZIP 文件名';
-            } else {
-                modeSub.textContent = '将文件或包含文件的ZIP压缩包打包为.brarchive 文件';
-                selectBtn.textContent = '选择文件';
-                outputNameInput.placeholder = '输入 .brarchive 文件名';
-            }
+            modeSub.textContent = mode === 'unpack' ?
+                '将 .brarchive 文件解包为 ZIP 压缩包' :
+                '将文件或包含文件的ZIP压缩包打包为.brarchive 文件';
+            outputNameInput.placeholder = mode === 'unpack' ? '输入 ZIP 文件名' : '输入 .brarchive 文件名';
 
-            // 重建 input 以保证属性正确且无残留状态
-            rebuildFileInput();
-
-            // 保留 selectedFiles，更新显示和按钮状态
+            updateHiddenInput();
             updateFileNamesDisplay();
             updateActionButton();
-            clearLog();
             showProgress(false);
             updateProgress(0);
         }
@@ -606,14 +560,12 @@
 
             for (const file of fileList) {
                 if (isUnpack) {
-                    // 解包模式只接受 .brarchive
                     if (!file.name.toLowerCase().endsWith('.brarchive')) {
                         log('跳过非 .brarchive 文件: ' + file.name, 'warn');
                         continue;
                     }
                     toAdd.push({ name: file.name, data: null, fileObj: file });
                 } else {
-                    // 打包模式：支持 ZIP 自动解压
                     const isZip = file.name.toLowerCase().endsWith('.zip') || file.type === 'application/zip';
                     if (isZip) {
                         try {
@@ -651,23 +603,36 @@
                 return;
             }
 
-            selectedFiles = selectedFiles.concat(toAdd);
+            const currentFiles = getCurrentFiles();
+            setCurrentFiles(currentFiles.concat(toAdd));
             updateFileNamesDisplay();
             log('添加 ' + toAdd.length + ' 个文件', 'info');
             updateActionButton();
         }
 
         async function readAllPendingFiles() {
-            const needRead = selectedFiles.filter(f => f.fileObj && !f.data);
+            const files = getCurrentFiles();
+            const needRead = files.filter(f => f.fileObj && !f.data);
             if (needRead.length === 0) return;
             log('正在读取 ' + needRead.length + ' 个文件内容...', 'info');
             for (const f of needRead) {
-                const buffer = await f.fileObj.arrayBuffer();
-                f.data = new Uint8Array(buffer);
+                f.data = new Uint8Array(await f.fileObj.arrayBuffer());
             }
         }
 
         // ===== 事件绑定 =====
+        selectBtn.addEventListener('click', function() {
+            updateHiddenInput();
+            hiddenInput.click();
+        });
+
+        hiddenInput.addEventListener('change', function(e) {
+            if (this.files.length) {
+                addFiles(this.files);
+            }
+            this.value = '';
+        });
+
         outputNameInput.addEventListener('input', updateActionButton);
         clearBtn.addEventListener('click', clearAll);
 
@@ -723,7 +688,8 @@
 
         // ===== 主操作 =====
         actionBtn.addEventListener('click', async function() {
-            if (selectedFiles.length === 0) {
+            const files = getCurrentFiles();
+            if (files.length === 0) {
                 log('请先选择文件', 'warn');
                 return;
             }
@@ -733,9 +699,8 @@
                 return;
             }
 
-            // 解包模式下检查所有文件是否为 .brarchive
             if (currentMode === 'unpack') {
-                const invalid = selectedFiles.some(f => {
+                const invalid = files.some(f => {
                     const n = f.fileObj ? f.fileObj.name : (f.name || '');
                     return !n.toLowerCase().endsWith('.brarchive');
                 });
@@ -786,8 +751,8 @@
                 zip.file(finalName, data);
             }
 
-            // 过滤出 .brarchive 文件
-            const brFiles = selectedFiles.filter(f => {
+            const files = getCurrentFiles();
+            const brFiles = files.filter(f => {
                 const n = f.fileObj ? f.fileObj.name : (f.name || '');
                 return n.toLowerCase().endsWith('.brarchive');
             });
@@ -826,8 +791,9 @@
         }
 
         async function doPack(baseName) {
+            const files = getCurrentFiles();
             await readAllPendingFiles();
-            const missing = selectedFiles.some(f => !f.data);
+            const missing = files.some(f => !f.data);
             if (missing) {
                 log('部分文件读取失败，请重新添加', 'error');
                 showProgress(false);
@@ -835,14 +801,14 @@
                 return;
             }
 
-            if (selectedFiles.length === 0) {
+            if (files.length === 0) {
                 log('没有可打包的文件', 'warn');
                 showProgress(false);
                 return;
             }
 
-            log('开始打包 ' + selectedFiles.length + ' 个文件...', 'info');
-            const packData = selectedFiles.map(f => ({ name: f.name, data: f.data }));
+            log('开始打包 ' + files.length + ' 个文件...', 'info');
+            const packData = files.map(f => ({ name: f.name, data: f.data }));
             const buffer = packBrarchive(packData);
             log('打包完成，大小 ' + (buffer.byteLength / 1024).toFixed(1) + ' KB', 'success');
             updateProgress(100);
@@ -864,8 +830,7 @@
 
         // ===== 初始化 =====
         setMode('unpack');
-        clearLog();
-        // 不输出欢迎信息
+        // 不输出任何日志
     </script>
 
 </body>
