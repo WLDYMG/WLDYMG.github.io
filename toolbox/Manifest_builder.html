@@ -358,6 +358,52 @@
             font-weight: 500;
         }
 
+        /* ========== Pack Optimization Version 独立框 ========== */
+        .pack-opt-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .pack-opt-row .field-input {
+            flex: 1;
+            min-width: 120px;
+            background: #f0f4f8;
+            color: #3d5e73;
+            cursor: not-allowed;
+        }
+        .pack-opt-row .field-input:focus {
+            border-color: #d0dfeb;
+            box-shadow: none;
+        }
+        .pack-opt-btn-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .pack-opt-btn-group .btn {
+            padding: 8px 18px;
+        }
+        .pack-opt-btn-group .btn-remove-opt {
+            background: #d9534f;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.15s, opacity 0.2s;
+            font-weight: 500;
+        }
+        .pack-opt-btn-group .btn-remove-opt:hover:not(:disabled) {
+            background: #c9302c;
+        }
+        .pack-opt-btn-group .btn-remove-opt:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
         /* ========== Subpacks ========== */
         .subpack-item {
             background: #f0f5fa;
@@ -874,6 +920,17 @@
                 padding: 8px 2px;
                 font-size: 14px;
             }
+            .pack-opt-row {
+                flex-wrap: wrap;
+            }
+            .pack-opt-btn-group {
+                width: 100%;
+                justify-content: stretch;
+            }
+            .pack-opt-btn-group .btn {
+                flex: 1;
+                justify-content: center;
+            }
             .preview-actions {
                 width: 100%;
             }
@@ -1065,6 +1122,20 @@
                     </div>
                 </div>
 
+                <!-- ========== Pack Optimization Version (独立框) ========== -->
+                <div class="section" id="packOptSection">
+                    <div class="section-title" data-i18n="packOptTitle">Pack Optimization Version</div>
+                    <div class="field-group" style="margin-bottom:0;">
+                        <div class="pack-opt-row">
+                            <input class="field-input" id="packOptVersion" type="text" value="0.1.0" readonly />
+                            <div class="pack-opt-btn-group">
+                                <button class="btn btn-outline" id="addPackOptBtn" data-i18n="packOptAdd">添加</button>
+                                <button class="btn btn-remove-opt" id="removePackOptBtn" data-i18n="packOptRemove" disabled>删除</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ========== Subpacks ========== -->
                 <div class="section">
                     <div class="section-title">
@@ -1152,14 +1223,26 @@
         </div>
     </div>
 
-    <!-- 删除确认模态框 -->
+    <!-- 删除确认模态框 (用于 pack_optimization_version 删除) -->
+    <div class="modal-overlay" id="deletePackOptModal">
+        <div class="modal-box">
+            <div class="modal-title" data-i18n="modalDeletePackOptTitle">确认删除</div>
+            <div class="modal-message" data-i18n="modalDeletePackOptMsg">确定要移除 pack_optimization_version 吗？</div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="deletePackOptCancel">取消</button>
+                <button class="btn btn-danger" id="deletePackOptConfirm">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 (用于 subpack 删除) -->
     <div class="modal-overlay" id="deleteModal">
         <div class="modal-box">
             <div class="modal-title" data-i18n="modalDeleteTitle">确认删除</div>
             <div class="modal-message" data-i18n="modalDeleteMsg">确定要删除此 subpack 吗？</div>
             <div class="modal-actions">
-                <button class="btn btn-outline" id="deleteModalCancel" data-i18n="btnCancel">取消</button>
-                <button class="btn btn-danger" id="deleteModalConfirm" data-i18n="btnOk">确定</button>
+                <button class="btn btn-outline" id="deleteModalCancel">取消</button>
+                <button class="btn btn-danger" id="deleteModalConfirm">确定</button>
             </div>
         </div>
     </div>
@@ -1186,6 +1269,10 @@
                     btnRefreshUuid: '刷新 UUID',
                     sectionVersion: 'Version',
                     sectionMinEngine: 'Min Engine Version',
+                    packOptTitle: 'Pack Optimization Version',
+                    packOptAdd: '添加',
+                    packOptAdded: '已添加',
+                    packOptRemove: '删除',
                     sectionSubpacks: 'Subpacks',
                     btnNew: '新建',
                     btnImport: '导入',
@@ -1203,6 +1290,8 @@
                     modalConfirmMsg: '确定要执行此操作吗？',
                     modalDeleteTitle: '确认删除',
                     modalDeleteMsg: '确定要删除此 subpack 吗？',
+                    modalDeletePackOptTitle: '确认删除',
+                    modalDeletePackOptMsg: '确定要移除 pack_optimization_version 吗？',
                     btnCancel: '取消',
                     btnOk: '确定',
                     emptySubpack: '暂无 subpack，点击“新建”添加',
@@ -1226,8 +1315,10 @@
                     toastConfirmDeleteSelected: '确定要删除选中的 {n} 个 subpacks 吗？',
                     toastConfirmDeleteAll: '确定要删除所有 subpacks 吗？',
                     toastConfirmReset: '是否重置所有版本与名称？',
-                    toastUuidRefreshed: '下载成功',
+                    toastUuidRefreshed: '已刷新 UUID',
                     toastOrderChanged: '已调整顺序',
+                    toastPackOptAdded: '已添加 pack_optimization_version',
+                    toastPackOptRemoved: '已移除 pack_optimization_version',
                 },
                 'en': {
                     appTitle: 'Manifest Generator',
@@ -1243,6 +1334,10 @@
                     btnRefreshUuid: 'Refresh UUID',
                     sectionVersion: 'Version',
                     sectionMinEngine: 'Min Engine Version',
+                    packOptTitle: 'Pack Optimization Version',
+                    packOptAdd: 'Add',
+                    packOptAdded: 'Added',
+                    packOptRemove: 'Remove',
                     sectionSubpacks: 'Subpacks',
                     btnNew: 'New',
                     btnImport: 'Import',
@@ -1260,6 +1355,8 @@
                     modalConfirmMsg: 'Are you sure you want to proceed?',
                     modalDeleteTitle: 'Confirm Delete',
                     modalDeleteMsg: 'Are you sure you want to delete this subpack?',
+                    modalDeletePackOptTitle: 'Confirm Delete',
+                    modalDeletePackOptMsg: 'Are you sure you want to remove pack_optimization_version?',
                     btnCancel: 'Cancel',
                     btnOk: 'OK',
                     emptySubpack: 'No subpacks yet, click "New" to add',
@@ -1285,6 +1382,8 @@
                     toastConfirmReset: 'Reset all versions and names?',
                     toastUuidRefreshed: 'UUID refreshed',
                     toastOrderChanged: 'Order adjusted',
+                    toastPackOptAdded: 'pack_optimization_version added',
+                    toastPackOptRemoved: 'pack_optimization_version removed',
                 },
                 'zh-TW': {
                     appTitle: 'Manifest 生成器',
@@ -1300,6 +1399,10 @@
                     btnRefreshUuid: '重新整理 UUID',
                     sectionVersion: 'Version',
                     sectionMinEngine: 'Min Engine Version',
+                    packOptTitle: 'Pack Optimization Version',
+                    packOptAdd: '新增',
+                    packOptAdded: '已新增',
+                    packOptRemove: '刪除',
                     sectionSubpacks: 'Subpacks',
                     btnNew: '新增',
                     btnImport: '匯入',
@@ -1317,6 +1420,8 @@
                     modalConfirmMsg: '確定要執行此操作嗎？',
                     modalDeleteTitle: '確認刪除',
                     modalDeleteMsg: '確定要刪除此 subpack 嗎？',
+                    modalDeletePackOptTitle: '確認刪除',
+                    modalDeletePackOptMsg: '確定要移除 pack_optimization_version 嗎？',
                     btnCancel: '取消',
                     btnOk: '確定',
                     emptySubpack: '暫無 subpack，點擊「新增」添加',
@@ -1342,6 +1447,8 @@
                     toastConfirmReset: '是否重設所有版本與名稱？',
                     toastUuidRefreshed: 'UUID 已重新整理',
                     toastOrderChanged: '已調整順序',
+                    toastPackOptAdded: '已新增 pack_optimization_version',
+                    toastPackOptRemoved: '已移除 pack_optimization_version',
                 }
             };
 
@@ -1383,6 +1490,8 @@
                     const key = el.dataset.i18n;
                     if (key) el.textContent = t(key);
                 });
+                // 更新 pack 状态显示文字
+                updatePackOptUI();
                 renderSubpacks();
                 updatePreview();
                 closeDropdown();
@@ -1487,6 +1596,17 @@
             const deleteModalConfirm = $('deleteModalConfirm');
             const deleteModalCancel = $('deleteModalCancel');
 
+            // Pack Optimization Version 相关
+            const packOptInput = $('packOptVersion');
+            const addPackOptBtn = $('addPackOptBtn');
+            const removePackOptBtn = $('removePackOptBtn');
+            const deletePackOptModal = $('deletePackOptModal');
+            const deletePackOptConfirm = $('deletePackOptConfirm');
+            const deletePackOptCancel = $('deletePackOptCancel');
+
+            let packOptVersionAdded = false;
+            const PACK_OPT_DEFAULT = '0.1.0';
+
             // ===== 数据 =====
             let subpacks = [];
             let pendingDeleteIndex = -1;
@@ -1553,15 +1673,19 @@
                     parseInt(mev[1].value) || 0,
                     parseInt(mev[2].value) || 0
                 ];
+                const header = {
+                    description: description,
+                    name: name,
+                    uuid: headerUUID,
+                    version: version,
+                    min_engine_version: minEngineVersion
+                };
+                if (packOptVersionAdded) {
+                    header.pack_optimization_version = PACK_OPT_DEFAULT;
+                }
                 const result = {
                     format_version: 2,
-                    header: {
-                        description: description,
-                        name: name,
-                        uuid: headerUUID,
-                        version: version,
-                        min_engine_version: minEngineVersion
-                    },
+                    header: header,
                     modules: [{
                         description: description,
                         type: 'resources',
@@ -1838,6 +1962,52 @@
                 return div.innerHTML;
             }
 
+            // ===== Pack Optimization Version UI =====
+            function updatePackOptUI() {
+                if (packOptVersionAdded) {
+                    addPackOptBtn.textContent = t('packOptAdded');
+                    addPackOptBtn.disabled = true;
+                    addPackOptBtn.classList.remove('btn-outline');
+                    addPackOptBtn.classList.add('btn-primary');
+                    removePackOptBtn.disabled = false;
+                    packOptInput.disabled = true;
+                } else {
+                    addPackOptBtn.textContent = t('packOptAdd');
+                    addPackOptBtn.disabled = false;
+                    addPackOptBtn.classList.remove('btn-primary');
+                    addPackOptBtn.classList.add('btn-outline');
+                    removePackOptBtn.disabled = true;
+                    packOptInput.disabled = false;
+                    packOptInput.value = PACK_OPT_DEFAULT;
+                }
+            }
+
+            function addPackOpt() {
+                if (packOptVersionAdded) return;
+                packOptVersionAdded = true;
+                updatePackOptUI();
+                updatePreview();
+                showToast('toastPackOptAdded', null, 'success');
+            }
+
+            function removePackOpt() {
+                if (!packOptVersionAdded) return;
+                // 弹出确认框
+                deletePackOptModal.classList.add('active');
+            }
+
+            function confirmRemovePackOpt() {
+                deletePackOptModal.classList.remove('active');
+                packOptVersionAdded = false;
+                updatePackOptUI();
+                updatePreview();
+                showToast('toastPackOptRemoved', null, 'success');
+            }
+
+            function cancelRemovePackOpt() {
+                deletePackOptModal.classList.remove('active');
+            }
+
             // ===== Subpacks 操作 =====
             function addSubpack() {
                 if (selectMode) exitSelectMode();
@@ -2007,8 +2177,16 @@
                 document.body.removeChild(textarea);
             }
 
-            // ===== 下载 + 自动刷新 UUID =====
+            // ===== 下载 + 自动刷新 UUID（但不触发刷新提示） =====
             function downloadJSON() {
+                // 静默刷新 UUID（不显示Toast）
+                const newHeaderUUID = generateUUID();
+                const newModulesUUID = generateUUID();
+                uuidHeaderEl.value = newHeaderUUID;
+                uuidModulesEl.value = newModulesUUID;
+                updatePreview();
+
+                // 下载文件
                 const raw = getRawJSON();
                 const blob = new Blob([raw], { type: 'application/json;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
@@ -2022,7 +2200,6 @@
                     URL.revokeObjectURL(url);
                 }, 300);
                 showToast('toastDownloaded', null, 'success');
-                refreshUuidBtn.click();
             }
 
             // ===== 重置 =====
@@ -2037,6 +2214,9 @@
                 mev[2].value = '0';
                 subpacks = [];
                 if (selectMode) exitSelectMode();
+                // 重置 pack_optimization_version
+                packOptVersionAdded = false;
+                updatePackOptUI();
                 renderSubpacks();
                 updatePreview();
                 showToast('toastReset', null, 'success');
@@ -2115,6 +2295,15 @@
                 }
             });
 
+            // Pack Optimization Version 事件
+            addPackOptBtn.addEventListener('click', addPackOpt);
+            removePackOptBtn.addEventListener('click', removePackOpt);
+            deletePackOptConfirm.addEventListener('click', confirmRemovePackOpt);
+            deletePackOptCancel.addEventListener('click', cancelRemovePackOpt);
+            deletePackOptModal.addEventListener('click', function(e) {
+                if (e.target === deletePackOptModal) cancelRemovePackOpt();
+            });
+
             // 键盘快捷键
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
@@ -2122,6 +2311,9 @@
                     if (deleteModal.classList.contains('active')) {
                         deleteModal.classList.remove('active');
                         pendingDeleteIndex = -1;
+                    }
+                    if (deletePackOptModal.classList.contains('active')) {
+                        cancelRemovePackOpt();
                     }
                     closeDropdown();
                 }
@@ -2151,6 +2343,9 @@
 
             selectAllBtn.style.display = 'none';
             selectAllBtn.disabled = true;
+
+            // 初始化 pack_optimization_version 状态
+            updatePackOptUI();
 
             setTimeout(() => {
                 setLanguage(currentLang);
